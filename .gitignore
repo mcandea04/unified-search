@@ -50,3 +50,6 @@ accessibility-skill-improvement-proposal.md
 # Local Claude Code settings
 .claude/
 
+# Testing artifacts
+.artifacts/
+

@@ -48,7 +48,7 @@ export default function Home() {
         </div>
 
         {/* Search Bar */}
-        <div className="max-w-5xl mx-auto mb-8 sm:mb-16 fade-in-up delay-1">
+        <div className="max-w-2xl mx-auto mb-8 sm:mb-16 fade-in-up delay-1">
           <div className="flex gap-2 sm:gap-3">
             <input
               type="text"
