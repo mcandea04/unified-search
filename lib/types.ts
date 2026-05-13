@@ -64,6 +64,8 @@ export interface SearchResult {
   totalProducts: number
   /** Number of products found per source */
   countBySource: Record<SourceSite, number>
+  /** Per-source error descriptors for sources that failed */
+  sourceErrors?: Partial<Record<SourceSite, string>>
   /** Timestamp of search */
   timestamp: number
 }

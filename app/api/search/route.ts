@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
       bebetei: 0,
       notino: 0,
     }
+    const sourceErrors: Partial<Record<'emag' | 'bebetei' | 'notino', string>> = {}
 
     for (const result of scraperResults) {
       if (result.success) {
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
         countBySource[result.source] = result.products.length
       } else {
         console.error(`Failed to scrape ${result.source}:`, result.error)
+        sourceErrors[result.source] = result.error ?? 'unknown'
       }
     }
 
@@ -71,6 +73,7 @@ export async function GET(request: NextRequest) {
       ungrouped,
       totalProducts: relevantProducts.length,
       countBySource,
+      ...(Object.keys(sourceErrors).length > 0 ? { sourceErrors } : {}),
       timestamp: Date.now(),
     }
 

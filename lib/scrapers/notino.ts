@@ -4,6 +4,7 @@ import {
   extractProductsByRegex,
   extractProductsFromJsonLd,
   fetchHtml,
+  looksLikeCloudflareChallenge,
   normalizePrice,
   type JsonLdProduct,
 } from './shared'
@@ -15,12 +16,30 @@ export async function scrapeNotino(query: string): Promise<ScraperResponse> {
   const url = `${BASE_URL}/search.asp?exps=${encodeURIComponent(query)}`
 
   try {
-    const res = await fetchHtml(url)
+    const res = await fetchHtml(url, {
+      headers: {
+        referer: `${BASE_URL}/`,
+      },
+    })
+    const html = await res.text()
+
+    if (looksLikeCloudflareChallenge(html)) {
+      console.warn(
+        `[Notino] Cloudflare challenge returned (status=${res.status}, size=${html.length})`
+      )
+      return {
+        source: SOURCE,
+        products: [],
+        success: false,
+        error: 'cloudflare-challenge',
+      }
+    }
+
     if (!res.ok) {
+      console.warn(`[Notino] HTTP ${res.status} (size=${html.length})`)
       return { source: SOURCE, products: [], success: false, error: `HTTP ${res.status}` }
     }
 
-    const html = await res.text()
     const products = parseResults(html)
     console.log(`[Notino] Parsed ${products.length} products`)
 

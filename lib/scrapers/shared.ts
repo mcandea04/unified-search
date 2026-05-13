@@ -1,13 +1,36 @@
 const DEFAULT_HEADERS: Record<string, string> = {
   'user-agent':
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   'accept-language': 'ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7',
-  accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  accept:
+    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'accept-encoding': 'gzip, deflate, br',
+  'upgrade-insecure-requests': '1',
+  'sec-fetch-dest': 'document',
+  'sec-fetch-mode': 'navigate',
+  'sec-fetch-site': 'none',
+  'sec-fetch-user': '?1',
+  'sec-ch-ua': '"Chromium";v="131", "Not_A Brand";v="24", "Google Chrome";v="131"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"Windows"',
 }
 
 export async function fetchHtml(url: string, init: RequestInit = {}): Promise<Response> {
   const headers = { ...DEFAULT_HEADERS, ...(init.headers as Record<string, string> | undefined) }
   return fetch(url, { ...init, headers })
+}
+
+const CLOUDFLARE_MARKERS = [
+  'cf-browser-verification',
+  'challenges.cloudflare.com',
+  '__cf_chl_',
+  'Just a moment...',
+]
+
+export function looksLikeCloudflareChallenge(html: string): boolean {
+  if (!html) return false
+  const head = html.slice(0, 4000)
+  return CLOUDFLARE_MARKERS.some((marker) => head.includes(marker))
 }
 
 type JsonLdNode = Record<string, unknown>
