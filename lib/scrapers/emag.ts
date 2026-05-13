@@ -80,8 +80,7 @@ function parseCardLayout(html: string): Product[] {
     const price = normalizePrice(priceNumMatch[1]) ?? 0
     if (price <= 0) continue
 
-    const imageMatch = priceWindow.match(/<img[^>]+(?:data-src|src)=["']([^"']+)["']/i)
-    const imageUrl = imageMatch?.[1] ?? ''
+    const imageUrl = findCardImage(html, match.index, priceWindow)
 
     products.set(pnk, {
       id: `${SOURCE}-${idx++}-${Date.now()}`,
@@ -113,6 +112,20 @@ function jsonLdToProduct(product: JsonLdProduct, idx: number): Product {
     source: SOURCE,
     brand: brandName,
   }
+}
+
+const IMG_URL_REGEX = /<img[^>]+(?:data-src|src)=["']([^"']+)["']/i
+const IMG_LOOKBACK = 3000
+
+function findCardImage(html: string, anchorIndex: number, forwardWindow: string): string {
+  const forward = forwardWindow.match(IMG_URL_REGEX)
+  if (forward) return forward[1]
+
+  const backStart = Math.max(0, anchorIndex - IMG_LOOKBACK)
+  const backWindow = html.slice(backStart, anchorIndex)
+  const backMatches = [...backWindow.matchAll(new RegExp(IMG_URL_REGEX, 'gi'))]
+  const last = backMatches[backMatches.length - 1]
+  return last?.[1] ?? ''
 }
 
 function cleanAnchorText(raw: string): string {
