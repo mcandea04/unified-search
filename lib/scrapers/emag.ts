@@ -11,12 +11,10 @@ const SOURCE = 'emag' as const
 const BASE_URL = 'https://www.emag.ro'
 const CACHE_TTL_MS = 60 * 60 * 1000
 
-const MOBILE_HEADERS: Record<string, string> = {
+const FETCH_HEADERS: Record<string, string> = {
   'user-agent':
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
-  'accept-language': 'ro-RO,ro;q=0.9',
-  accept:
-    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Mozilla/5.0 (X11; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0',
+  'accept-language': 'ro-RO,ro;q=0.9,en;q=0.8',
 }
 
 export async function scrapeEmag(query: string): Promise<ScraperResponse> {
@@ -30,7 +28,7 @@ export async function scrapeEmag(query: string): Promise<ScraperResponse> {
   const url = `${BASE_URL}/search/${encodeURIComponent(query)}?ref=effective_search`
 
   try {
-    const res = await fetch(url, { headers: MOBILE_HEADERS })
+    const res = await fetch(url, { headers: FETCH_HEADERS })
     if (!res.ok) {
       return { source: SOURCE, products: [], success: false, error: `HTTP ${res.status}` }
     }
