@@ -99,8 +99,8 @@ function parseCardLayout(html: string): Product[] {
 }
 
 function extractCardName(card: string): string {
-  const fromDataProduct = card.match(/&quot;product_name&quot;:&quot;([^&]+)&quot;/)?.[1]
-  if (fromDataProduct) return decodeJsonString(fromDataProduct)
+  const fromDataProduct = parseDataProductName(card)
+  if (fromDataProduct) return fromDataProduct
 
   const titleAnchor = card.match(
     /class="[^"]*card-v2-title[^"]*"[^>]*>([\s\S]*?)<\/a>/i,
@@ -113,6 +113,33 @@ function extractCardName(card: string): string {
   return ''
 }
 
+function parseDataProductName(card: string): string {
+  const raw = card.match(/data-product="([^"]+)"/)?.[1]
+  if (!raw) return ''
+  const decoded = decodeHtmlAttribute(raw)
+  try {
+    const parsed = JSON.parse(decoded) as { product_name?: unknown }
+    if (typeof parsed.product_name === 'string') {
+      return parsed.product_name.replace(/\s+/g, ' ').trim()
+    }
+  } catch {
+    // Fall through to empty so the title/aria fallbacks run
+  }
+  return ''
+}
+
+function decodeHtmlAttribute(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)))
+    .replace(/&amp;/g, '&')
+}
+
 const PRODUCT_IMG_REGEX =
   /(?:src|data-src)=["'](https:\/\/s\d+emagst\.akamaized\.net\/products\/[^"']+)["']/i
 
@@ -120,16 +147,6 @@ function findProductImage(card: string): string {
   const match = card.match(PRODUCT_IMG_REGEX)
   if (!match) return ''
   return match[1].replace(/&amp;/g, '&')
-}
-
-function decodeJsonString(s: string): string {
-  return s
-    .replace(/\\\//g, '/')
-    .replace(/\\"/g, '"')
-    .replace(/\\u002F/gi, '/')
-    .replace(/\\\\/g, '\\')
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 function jsonLdToProduct(product: JsonLdProduct, idx: number): Product {
