@@ -48,30 +48,23 @@ function parseResults(html: string): Product[] {
 
 function parseCardLayout(html: string): Product[] {
   const products = new Map<string, Product>()
-  const cardRegex = /data-product-id="\d+"([^>]*?)>/gi
-  const cardStarts: number[] = []
-  for (const m of html.matchAll(/data-product-id="\d+"/gi)) {
-    if (m.index !== undefined) cardStarts.push(m.index)
-  }
-  let match: RegExpExecArray | null
+  const segments = html.split('data-zone="card"').slice(1)
   let idx = 0
 
-  while ((match = cardRegex.exec(html))) {
-    const attrs = match[1]
-    const nameMatch = attrs.match(/data-name="([^"]+)"/)
-    const urlMatch = attrs.match(/data-url="([^"]+\/pd\/([A-Z0-9]+)\/[^"]*)"/)
-    if (!nameMatch || !urlMatch) continue
+  for (const seg of segments) {
+    const card = seg.slice(0, 12000)
+    const dataUrl = card.match(/data-url="([^"]+)"/)?.[1]
+    if (!dataUrl) continue
 
-    const pnk = urlMatch[2]
+    const pnkMatch = dataUrl.match(/\/pd\/([A-Z0-9]+)\//)
+    if (!pnkMatch) continue
+    const pnk = pnkMatch[1]
     if (products.has(pnk)) continue
 
-    const name = decodeHtmlEntities(nameMatch[1])
-    const rawUrl = urlMatch[1]
-    const url = rawUrl.startsWith('http') ? rawUrl : `${BASE_URL}${rawUrl}`
+    const name = extractCardName(card)
+    if (!name || name.length < 5) continue
 
-    const cardEnd = cardStarts.find((s) => s > match!.index) ?? html.length
-    const priceWindow = html.slice(match.index, cardEnd)
-    const priceMatch = priceWindow.match(/product-new-price[^>]*>([\s\S]{0,200})/i)
+    const priceMatch = card.match(/product-new-price[^>]*>([\s\S]{0,200})/i)
     if (!priceMatch) continue
 
     const priceText = priceMatch[1]
@@ -88,7 +81,8 @@ function parseCardLayout(html: string): Product[] {
     const price = normalizePrice(priceNumMatch[1]) ?? 0
     if (price <= 0) continue
 
-    const imageUrl = findCardImage(html, match.index, priceWindow)
+    const imageUrl = findProductImage(card)
+    const url = dataUrl.startsWith('http') ? dataUrl : `${BASE_URL}${dataUrl}`
 
     products.set(pnk, {
       id: `${SOURCE}-${idx++}-${Date.now()}`,
@@ -104,12 +98,55 @@ function parseCardLayout(html: string): Product[] {
   return Array.from(products.values())
 }
 
-function decodeHtmlEntities(value: string): string {
-  return value
-    .replace(/&amp;/g, '&')
+function extractCardName(card: string): string {
+  const fromDataProduct = parseDataProductName(card)
+  if (fromDataProduct) return fromDataProduct
+
+  const titleAnchor = card.match(
+    /class="[^"]*card-v2-title[^"]*"[^>]*>([\s\S]*?)<\/a>/i,
+  )?.[1]
+  if (titleAnchor) return cleanAnchorText(titleAnchor)
+
+  const ariaLabel = card.match(/aria-label="([^"]+)"[^>]*class="[^"]*card-v2-thumb/i)?.[1]
+  if (ariaLabel) return cleanAnchorText(ariaLabel)
+
+  return ''
+}
+
+function parseDataProductName(card: string): string {
+  const raw = card.match(/data-product="([^"]+)"/)?.[1]
+  if (!raw) return ''
+  const decoded = decodeHtmlAttribute(raw)
+  try {
+    const parsed = JSON.parse(decoded) as { product_name?: unknown }
+    if (typeof parsed.product_name === 'string') {
+      return parsed.product_name.replace(/\s+/g, ' ').trim()
+    }
+  } catch {
+    // Fall through to empty so the title/aria fallbacks run
+  }
+  return ''
+}
+
+function decodeHtmlAttribute(s: string): string {
+  return s
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)))
+    .replace(/&amp;/g, '&')
+}
+
+const PRODUCT_IMG_REGEX =
+  /(?:src|data-src)=["'](https:\/\/s\d+emagst\.akamaized\.net\/products\/[^"']+)["']/i
+
+function findProductImage(card: string): string {
+  const match = card.match(PRODUCT_IMG_REGEX)
+  if (!match) return ''
+  return match[1].replace(/&amp;/g, '&')
 }
 
 function jsonLdToProduct(product: JsonLdProduct, idx: number): Product {
@@ -130,18 +167,15 @@ function jsonLdToProduct(product: JsonLdProduct, idx: number): Product {
   }
 }
 
-const IMG_URL_REGEX = /<img[^>]+(?:data-src|src)=["']([^"']+)["']/i
-const IMG_LOOKBACK = 3000
-
-function findCardImage(html: string, anchorIndex: number, forwardWindow: string): string {
-  const forward = forwardWindow.match(IMG_URL_REGEX)
-  if (forward) return forward[1]
-
-  const backStart = Math.max(0, anchorIndex - IMG_LOOKBACK)
-  const backWindow = html.slice(backStart, anchorIndex)
-  const backMatches = [...backWindow.matchAll(new RegExp(IMG_URL_REGEX, 'gi'))]
-  const last = backMatches[backMatches.length - 1]
-  return last?.[1] ?? ''
+function cleanAnchorText(raw: string): string {
+  return raw
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function isValidProduct(p: Product): boolean {
