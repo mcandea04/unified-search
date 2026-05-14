@@ -2,7 +2,6 @@ import type { Product, ScraperResponse } from '../types'
 import {
   extractJsonLd,
   extractProductsFromJsonLd,
-  fetchHtml,
   normalizePrice,
   type JsonLdProduct,
 } from './shared'
@@ -11,6 +10,14 @@ import { getCachedProducts, setCachedProducts } from './cache'
 const SOURCE = 'emag' as const
 const BASE_URL = 'https://www.emag.ro'
 const CACHE_TTL_MS = 60 * 60 * 1000
+
+const MOBILE_HEADERS: Record<string, string> = {
+  'user-agent':
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
+  'accept-language': 'ro-RO,ro;q=0.9',
+  accept:
+    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+}
 
 export async function scrapeEmag(query: string): Promise<ScraperResponse> {
   const cacheKey = `emag:${query.trim().toLowerCase()}`
@@ -23,7 +30,7 @@ export async function scrapeEmag(query: string): Promise<ScraperResponse> {
   const url = `${BASE_URL}/search/${encodeURIComponent(query)}?ref=effective_search`
 
   try {
-    const res = await fetchHtml(url)
+    const res = await fetch(url, { headers: MOBILE_HEADERS })
     if (!res.ok) {
       return { source: SOURCE, products: [], success: false, error: `HTTP ${res.status}` }
     }
