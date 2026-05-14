@@ -48,21 +48,29 @@ function parseResults(html: string): Product[] {
 
 function parseCardLayout(html: string): Product[] {
   const products = new Map<string, Product>()
-  const linkRegex = /href=["']([^"']*\/pd\/([A-Z0-9]+)\/[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi
+  const cardRegex = /data-product-id="\d+"([^>]*?)>/gi
+  const cardStarts: number[] = []
+  for (const m of html.matchAll(/data-product-id="\d+"/gi)) {
+    if (m.index !== undefined) cardStarts.push(m.index)
+  }
   let match: RegExpExecArray | null
   let idx = 0
 
-  while ((match = linkRegex.exec(html))) {
-    const rawUrl = match[1]
-    const pnk = match[2]
+  while ((match = cardRegex.exec(html))) {
+    const attrs = match[1]
+    const nameMatch = attrs.match(/data-name="([^"]+)"/)
+    const urlMatch = attrs.match(/data-url="([^"]+\/pd\/([A-Z0-9]+)\/[^"]*)"/)
+    if (!nameMatch || !urlMatch) continue
+
+    const pnk = urlMatch[2]
     if (products.has(pnk)) continue
 
-    const name = cleanAnchorText(match[3])
-    if (!name || name.length < 10) continue
-
+    const name = decodeHtmlEntities(nameMatch[1])
+    const rawUrl = urlMatch[1]
     const url = rawUrl.startsWith('http') ? rawUrl : `${BASE_URL}${rawUrl}`
 
-    const priceWindow = html.slice(match.index, Math.min(html.length, match.index + 5000))
+    const cardEnd = cardStarts.find((s) => s > match!.index) ?? html.length
+    const priceWindow = html.slice(match.index, cardEnd)
     const priceMatch = priceWindow.match(/product-new-price[^>]*>([\s\S]{0,200})/i)
     if (!priceMatch) continue
 
@@ -96,6 +104,14 @@ function parseCardLayout(html: string): Product[] {
   return Array.from(products.values())
 }
 
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+}
+
 function jsonLdToProduct(product: JsonLdProduct, idx: number): Product {
   const offer = Array.isArray(product.offers) ? product.offers[0] : product.offers
   const image = Array.isArray(product.image) ? product.image[0] : product.image
@@ -126,17 +142,6 @@ function findCardImage(html: string, anchorIndex: number, forwardWindow: string)
   const backMatches = [...backWindow.matchAll(new RegExp(IMG_URL_REGEX, 'gi'))]
   const last = backMatches[backMatches.length - 1]
   return last?.[1] ?? ''
-}
-
-function cleanAnchorText(raw: string): string {
-  return raw
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 function isValidProduct(p: Product): boolean {
