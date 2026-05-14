@@ -66,7 +66,8 @@ function parseCardLayout(html: string): Product[] {
     if (products.has(pnk)) continue
 
     const name = decodeHtmlEntities(nameMatch[1])
-    const url = urlMatch[1]
+    const rawUrl = urlMatch[1]
+    const url = rawUrl.startsWith('http') ? rawUrl : `${BASE_URL}${rawUrl}`
 
     const cardEnd = cardStarts.find((s) => s > match!.index) ?? html.length
     const priceWindow = html.slice(match.index, cardEnd)
