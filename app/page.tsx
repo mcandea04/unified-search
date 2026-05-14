@@ -43,7 +43,7 @@ export default function Home() {
             Unified Search
           </h1>
           <p className="text-sm sm:text-lg md:text-2xl text-slate-400 font-light px-4">
-            Multi-source price discovery across <span className="text-cyan-400 font-medium">eMAG</span>, <span className="text-purple-400 font-medium">BebeTei</span> & <span className="text-rose-400 font-medium">Notino</span>
+            Multi-source price discovery across <span className="text-cyan-400 font-medium">eMAG</span>, <span className="text-purple-400 font-medium">BebeTei</span>, <span className="text-rose-400 font-medium">Notino</span> & <span className="text-orange-400 font-medium">Trendyol</span>
           </p>
         </div>
 

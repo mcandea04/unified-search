@@ -1,7 +1,7 @@
 /**
  * Source website identifier
  */
-export type SourceSite = 'emag' | 'bebetei' | 'notino'
+export type SourceSite = 'emag' | 'bebetei' | 'notino' | 'trendyol'
 
 /**
  * Individual product from a single source

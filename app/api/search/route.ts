@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { scrapeAllSites } from '@/lib/scrapers'
 import { matchProducts } from '@/lib/matching/fuzzy-match'
 import { filterAndSortByRelevance, sortGroupsByRelevance } from '@/lib/matching/relevance'
-import type { SearchResult, Product } from '@/lib/types'
+import type { SearchResult, Product, SourceSite } from '@/lib/types'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -26,12 +26,13 @@ export async function GET(request: NextRequest) {
 
     // Collect all products
     const allProducts: Product[] = []
-    const countBySource: Record<string, number> = {
+    const countBySource: Record<SourceSite, number> = {
       emag: 0,
       bebetei: 0,
       notino: 0,
+      trendyol: 0,
     }
-    const sourceErrors: Partial<Record<'emag' | 'bebetei' | 'notino', string>> = {}
+    const sourceErrors: Partial<Record<SourceSite, string>> = {}
 
     for (const result of scraperResults) {
       if (result.success) {
