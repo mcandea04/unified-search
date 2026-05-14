@@ -81,6 +81,7 @@ function parseResults(html: string): Product[] {
       imageUrl: item.image ?? '',
       productUrl: item.url,
       source: SOURCE,
+      attributes: { organic: false },
     }))
     .filter(isValidProduct)
 }
@@ -100,6 +101,7 @@ function jsonLdToProduct(product: JsonLdProduct, idx: number): Product {
     productUrl: product.url ?? '',
     source: SOURCE,
     brand: brandName,
+    attributes: { organic: false },
   }
 }
 

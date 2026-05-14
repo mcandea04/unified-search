@@ -131,6 +131,7 @@ function toProduct(p: TrendyolProduct, idx: number): Product {
     productUrl,
     source: SOURCE,
     brand: p.brand,
+    attributes: { organic: false },
   }
 }
 
