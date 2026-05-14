@@ -15,11 +15,22 @@ export async function scrapeEmag(query: string): Promise<ScraperResponse> {
 
   try {
     const res = await fetchHtml(url)
+    console.log(
+      `[eMAG] fetch status=${res.status} ok=${res.ok} content-type=${res.headers.get('content-type')} content-length=${res.headers.get('content-length')}`,
+    )
     if (!res.ok) {
       return { source: SOURCE, products: [], success: false, error: `HTTP ${res.status}` }
     }
 
     const html = await res.text()
+    const headSnippet = html.slice(0, 600).replace(/\s+/g, ' ')
+    const cardCount = (html.match(/data-zone="card"/g) || []).length
+    const productIdCount = (html.match(/data-product-id="\d+"/g) || []).length
+    const jsonLdCount = (html.match(/<script[^>]+application\/ld\+json/g) || []).length
+    console.log(
+      `[eMAG] html len=${html.length} cards=${cardCount} dataProductIds=${productIdCount} jsonLd=${jsonLdCount}`,
+    )
+    console.log(`[eMAG] head: ${headSnippet}`)
     const products = parseResults(html)
     console.log(`[eMAG] Parsed ${products.length} products`)
 
