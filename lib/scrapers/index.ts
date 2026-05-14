@@ -1,6 +1,7 @@
 import { scrapeEmag } from './emag'
 import { scrapeBebetei } from './bebetei'
 import { scrapeNotino } from './notino'
+import { scrapeTrendyol } from './trendyol'
 import type { ScraperResponse } from '../types'
 
 /**
@@ -13,13 +14,14 @@ export async function scrapeAllSites(query: string): Promise<ScraperResponse[]> 
     scrapeEmag(query),
     scrapeBebetei(query),
     scrapeNotino(query),
+    scrapeTrendyol(query),
   ])
 
   return results.map((result, idx) => {
     if (result.status === 'fulfilled') {
       return result.value
     } else {
-      const sources = ['emag', 'bebetei', 'notino'] as const
+      const sources = ['emag', 'bebetei', 'notino', 'trendyol'] as const
       console.error(`Scraper ${sources[idx]} failed:`, result.reason)
       return {
         source: sources[idx],
@@ -31,4 +33,4 @@ export async function scrapeAllSites(query: string): Promise<ScraperResponse[]> 
   })
 }
 
-export { scrapeEmag, scrapeBebetei, scrapeNotino }
+export { scrapeEmag, scrapeBebetei, scrapeNotino, scrapeTrendyol }
