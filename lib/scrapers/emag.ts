@@ -6,35 +6,41 @@ import {
   normalizePrice,
   type JsonLdProduct,
 } from './shared'
+import { getCachedProducts, setCachedProducts } from './cache'
 
 const SOURCE = 'emag' as const
 const BASE_URL = 'https://www.emag.ro'
+const CACHE_TTL_MS = 60 * 60 * 1000
 
 export async function scrapeEmag(query: string): Promise<ScraperResponse> {
+  const cacheKey = `emag:${query.trim().toLowerCase()}`
+  const cached = getCachedProducts(cacheKey)
+  if (cached) {
+    console.log(`[eMAG] cache hit for "${query}" (${cached.length} products)`)
+    return { source: SOURCE, products: cached, success: true }
+  }
+
   const url = `${BASE_URL}/search/${encodeURIComponent(query)}?ref=effective_search`
 
   try {
     const res = await fetchHtml(url)
-    console.log(
-      `[eMAG] fetch status=${res.status} ok=${res.ok} content-type=${res.headers.get('content-type')} content-length=${res.headers.get('content-length')}`,
-    )
     if (!res.ok) {
       return { source: SOURCE, products: [], success: false, error: `HTTP ${res.status}` }
     }
 
     const html = await res.text()
-    const headSnippet = html.slice(0, 600).replace(/\s+/g, ' ')
-    const cardCount = (html.match(/data-zone="card"/g) || []).length
-    const productIdCount = (html.match(/data-product-id="\d+"/g) || []).length
-    const jsonLdCount = (html.match(/<script[^>]+application\/ld\+json/g) || []).length
-    console.log(
-      `[eMAG] html len=${html.length} cards=${cardCount} dataProductIds=${productIdCount} jsonLd=${jsonLdCount}`,
-    )
-    console.log(`[eMAG] head: ${headSnippet}`)
-    const products = parseResults(html)
-    console.log(`[eMAG] Parsed ${products.length} products`)
+    if (looksLikeAntiBot(html)) {
+      console.log(`[eMAG] soft-block detected for "${query}" (html len=${html.length})`)
+      return { source: SOURCE, products: [], success: false, error: 'blocked-by-emag' }
+    }
 
-    return { source: SOURCE, products: products.slice(0, 20), success: true }
+    const products = parseResults(html).slice(0, 20)
+    console.log(`[eMAG] Parsed ${products.length} products`)
+    if (products.length > 0) {
+      setCachedProducts(cacheKey, products, CACHE_TTL_MS)
+    }
+
+    return { source: SOURCE, products, success: true }
   } catch (error) {
     console.error('eMAG scraper error:', error)
     return {
@@ -44,6 +50,20 @@ export async function scrapeEmag(query: string): Promise<ScraperResponse> {
       error: error instanceof Error ? error.message : 'Unknown error',
     }
   }
+}
+
+function looksLikeAntiBot(html: string): boolean {
+  if (!html) return true
+  const hasCards = /data-zone="card"/.test(html) || /data-product-id="\d+"/.test(html)
+  if (hasCards) return false
+  const head = html.slice(0, 4000).toLowerCase()
+  return (
+    head.includes('captcha') ||
+    head.includes('access denied') ||
+    head.includes('forbidden') ||
+    head.includes('cf-browser-verification') ||
+    html.length < 5000
+  )
 }
 
 function parseResults(html: string): Product[] {
