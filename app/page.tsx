@@ -1,26 +1,43 @@
 'use client'
 
 import { useState } from 'react'
+import type { ProductGroup, Product, PerUnitPrice, SearchResult } from '@/lib/types'
+
+function formatPerUnit(ppu: PerUnitPrice | undefined): string | null {
+  if (!ppu) return null
+  const v = ppu.value.toFixed(2)
+  if (ppu.unit === 'piece') return `${v} RON / buc`
+  return `${v} RON / 100${ppu.unit}`
+}
+
+function packLabel(product: Product): string {
+  if (product.attributes.pack) return product.attributes.pack.original
+  if (typeof product.attributes.count === 'number') return `${product.attributes.count} buc`
+  return ''
+}
 
 export default function Home() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
-  const [groups, setGroups] = useState<any[]>([])
-  const [ungrouped, setUngrouped] = useState<any[]>([])
+  const [groups, setGroups] = useState<ProductGroup[]>([])
+  const [ungrouped, setUngrouped] = useState<Product[]>([])
   const [totalProducts, setTotalProducts] = useState(0)
   const [hasSearched, setHasSearched] = useState(false)
+  const [enrichmentError, setEnrichmentError] = useState<string | undefined>()
 
   const handleSearch = async () => {
     if (!query.trim()) return
 
     setLoading(true)
     setHasSearched(true)
+    setEnrichmentError(undefined)
     try {
       const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
-      const data = await response.json()
+      const data: SearchResult = await response.json()
       setGroups(data.groups || [])
       setUngrouped(data.ungrouped || [])
       setTotalProducts(data.totalProducts || 0)
+      setEnrichmentError(data.enrichmentError)
     } catch (error) {
       console.error('Search error:', error)
     } finally {
@@ -95,6 +112,13 @@ export default function Home() {
         {/* Results */}
         {!loading && hasSearched && (groups.length > 0 || ungrouped.length > 0) && (
           <div className="max-w-7xl mx-auto">
+            {/* Enrichment error banner */}
+            {enrichmentError && (
+              <div className="mb-4 px-4 py-3 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-300 text-sm">
+                ⚠ {enrichmentError} — showing raw results without grouping.
+              </div>
+            )}
+
             {/* Stats Bar */}
             <div className="glass-card rounded-lg sm:rounded-xl p-4 sm:p-6 mb-4 sm:mb-8 fade-in-up delay-2">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
@@ -129,68 +153,74 @@ export default function Home() {
                 {/* Table Header */}
                 <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/20 rounded-lg mb-2 text-slate-400 text-xs sm:text-sm font-medium uppercase tracking-wider border-b border-slate-700/30">
                   <div className="col-span-1">Image</div>
-                  <div className="col-span-5">Product</div>
+                  <div className="col-span-6">Product</div>
                   <div className="col-span-3">Merchant</div>
-                  <div className="col-span-3 text-right">Price</div>
+                  <div className="col-span-2 text-right">Price</div>
                 </div>
 
                 {/* Table Rows */}
                 <div className="space-y-1">
-                  {group.products.map((product: any, pIdx: number) => (
-                    <div
-                      key={pIdx}
-                      className="grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all duration-200 items-center"
-                    >
-                      {/* Image */}
-                      <div className="col-span-1">
-                        {product.imageUrl ? (
-                          <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded bg-white">
-                            <img
-                              src={product.imageUrl}
-                              alt={product.name}
-                              className="max-w-full max-h-full object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 bg-slate-800/40 rounded border border-slate-700/50"></div>
-                        )}
-                      </div>
-
-                      {/* Product Name */}
-                      <div className="col-span-5">
-                        <a
-                          href={product.productUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-cyan-300 hover:text-cyan-200 visited:text-cyan-300 hover:visited:text-cyan-200 underline decoration-cyan-500/30 hover:decoration-cyan-500/60 text-sm font-medium transition-colors line-clamp-2"
-                        >
-                          {product.name || group.matchedName}
-                        </a>
-                      </div>
-
-                      {/* Merchant */}
-                      <div className="col-span-3">
-                        <span className="text-slate-300 text-sm font-medium">
-                          {product.source}
-                        </span>
-                      </div>
-
-                      {/* Price */}
-                      <div className="col-span-3 flex items-center justify-end gap-2">
-                        <div className="flex items-baseline gap-1">
-                          <span className="price-display text-lg font-semibold text-slate-100">
-                            {product.price}
-                          </span>
-                          <span className="text-slate-400 text-sm">RON</span>
+                  {group.products.map((product, pIdx) => {
+                    const isBestUnit =
+                      product.pricePerUnit &&
+                      group.bestPricePerUnit &&
+                      product.pricePerUnit.value === group.bestPricePerUnit.value &&
+                      product.pricePerUnit.unit === group.bestPricePerUnit.unit
+                    const ppuText = formatPerUnit(product.pricePerUnit)
+                    return (
+                      <div
+                        key={pIdx}
+                        className="grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all duration-200 items-center"
+                      >
+                        <div className="col-span-1">
+                          {product.imageUrl ? (
+                            <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded bg-white">
+                              <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-full object-contain" />
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 bg-slate-800/40 rounded border border-slate-700/50"></div>
+                          )}
                         </div>
-                        {product.price === group.bestPrice && (
-                          <div className="px-2 py-0.5 bg-gradient-to-r from-rose-500/20 to-orange-500/20 border border-rose-500/30 rounded">
-                            <span className="text-rose-400 text-xs font-bold whitespace-nowrap">BEST</span>
+                        <div className="col-span-6">
+                          <a
+                            href={product.productUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-cyan-300 hover:text-cyan-200 visited:text-cyan-300 hover:visited:text-cyan-200 underline decoration-cyan-500/30 hover:decoration-cyan-500/60 text-sm font-medium transition-colors line-clamp-2"
+                          >
+                            {product.name || group.matchedName}
+                          </a>
+                          {product.attributes.organic && (
+                            <span className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded">
+                              bio
+                            </span>
+                          )}
+                        </div>
+                        <div className="col-span-3">
+                          <span className="text-slate-300 text-sm font-medium">{product.source}</span>
+                        </div>
+                        <div className="col-span-2 flex flex-col items-end">
+                          <div className="flex items-baseline gap-1">
+                            <span className="price-display text-lg font-semibold text-slate-100">{product.price}</span>
+                            <span className="text-slate-400 text-sm">RON</span>
                           </div>
-                        )}
+                          {ppuText && <div className="text-slate-500 text-xs mt-0.5">{ppuText}</div>}
+                          <div className="flex gap-1 mt-1">
+                            {product.price === group.bestPrice && (
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-rose-500/20 to-orange-500/20 border border-rose-500/30 rounded text-rose-400 text-[10px] font-bold whitespace-nowrap">
+                                BEST
+                              </span>
+                            )}
+                            {isBestUnit && product.price !== group.bestPrice && (
+                              <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded text-amber-300 text-[10px] font-bold whitespace-nowrap">
+                                BEST/UNIT
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}
@@ -198,12 +228,19 @@ export default function Home() {
             {/* Ungrouped Products */}
             {ungrouped.length > 0 && (
               <div className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-8 fade-in-up">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-slate-400">Other results</h3>
+                  <div className="px-3 py-1 rounded-full bg-slate-700/40 border border-slate-600/30">
+                    <span className="text-slate-400 text-sm">{ungrouped.length} products</span>
+                  </div>
+                </div>
                 {/* Table Header */}
                 <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/20 rounded-lg mb-2 text-slate-400 text-xs sm:text-sm font-medium uppercase tracking-wider border-b border-slate-700/30">
                   <div className="col-span-1">Image</div>
                   <div className="col-span-5">Product</div>
-                  <div className="col-span-3">Merchant</div>
-                  <div className="col-span-3 text-right">Price</div>
+                  <div className="col-span-2">Pack</div>
+                  <div className="col-span-2">Merchant</div>
+                  <div className="col-span-2 text-right">Price</div>
                 </div>
 
                 {/* Table Rows */}
@@ -213,22 +250,15 @@ export default function Home() {
                       key={`ungrouped-${idx}`}
                       className="grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all duration-200 items-center"
                     >
-                      {/* Image */}
                       <div className="col-span-1">
                         {product.imageUrl ? (
                           <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded bg-white">
-                            <img
-                              src={product.imageUrl}
-                              alt={product.name}
-                              className="max-w-full max-h-full object-contain"
-                            />
+                            <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-full object-contain" />
                           </div>
                         ) : (
                           <div className="w-12 h-12 bg-slate-800/40 rounded border border-slate-700/50"></div>
                         )}
                       </div>
-
-                      {/* Product Name */}
                       <div className="col-span-5">
                         <a
                           href={product.productUrl}
@@ -238,21 +268,24 @@ export default function Home() {
                         >
                           {product.name}
                         </a>
+                        {product.attributes.organic && (
+                          <span className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded">
+                            bio
+                          </span>
+                        )}
                       </div>
-
-                      {/* Merchant */}
-                      <div className="col-span-3">
-                        <span className="text-slate-300 text-sm font-medium">
-                          {product.source}
-                        </span>
+                      <div className="col-span-2 text-slate-300 text-sm">{packLabel(product)}</div>
+                      <div className="col-span-2">
+                        <span className="text-slate-300 text-sm font-medium">{product.source}</span>
                       </div>
-
-                      {/* Price */}
-                      <div className="col-span-3 flex items-baseline justify-end gap-2">
-                        <span className="price-display text-lg font-semibold text-slate-100">
-                          {product.price}
-                        </span>
-                        <span className="text-slate-400 text-sm">RON</span>
+                      <div className="col-span-2 flex flex-col items-end">
+                        <div className="flex items-baseline gap-1">
+                          <span className="price-display text-lg font-semibold text-slate-100">{product.price}</span>
+                          <span className="text-slate-400 text-sm">RON</span>
+                        </div>
+                        {formatPerUnit(product.pricePerUnit) && (
+                          <div className="text-slate-500 text-xs mt-0.5">{formatPerUnit(product.pricePerUnit)}</div>
+                        )}
                       </div>
                     </div>
                   ))}

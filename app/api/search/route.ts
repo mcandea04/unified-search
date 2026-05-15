@@ -1,30 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { scrapeAllSites } from '@/lib/scrapers'
-import { matchProducts } from '@/lib/matching/fuzzy-match'
+import { enrichWithLLM } from '@/lib/matching/llm-attributes'
+import { groupProducts } from '@/lib/matching/grouping'
 import { filterAndSortByRelevance, sortGroupsByRelevance } from '@/lib/matching/relevance'
-import type { SearchResult, Product, SourceSite } from '@/lib/types'
+import type {
+  PerUnitPrice,
+  Product,
+  ProductAttributes,
+  SearchResult,
+  SourceSite,
+} from '@/lib/types'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
+
+function computePerUnitPrice(price: number, attrs: ProductAttributes): PerUnitPrice | undefined {
+  if (attrs.pack && attrs.pack.value > 0) {
+    return { value: price / (attrs.pack.value / 100), unit: attrs.pack.unit }
+  }
+  if (typeof attrs.count === 'number' && attrs.count > 0) {
+    return { value: price / attrs.count, unit: 'piece' }
+  }
+  return undefined
+}
+
+function applyPerUnitPrice(product: Product): Product {
+  const pricePerUnit = computePerUnitPrice(product.price, product.attributes)
+  return { ...product, pricePerUnit }
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const query = searchParams.get('q')
 
   if (!query || query.trim().length === 0) {
-    return NextResponse.json(
-      { error: 'Query parameter "q" is required' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Query parameter "q" is required' }, { status: 400 })
   }
 
   try {
     console.log(`Received search request for: "${query}"`)
-
-    // Scrape all sites in parallel
     const scraperResults = await scrapeAllSites(query)
 
-    // Collect all products
     const allProducts: Product[] = []
     const countBySource: Record<SourceSite, number> = {
       emag: 0,
@@ -47,27 +63,22 @@ export async function GET(request: NextRequest) {
     console.log(`Found ${allProducts.length} total products`)
     console.log(`By source:`, countBySource)
 
-    // Filter and sort all products by relevance first
+    const { products: enriched, error: enrichmentError } = await enrichWithLLM(allProducts, query)
+    const withPricePerUnit = enriched.map(applyPerUnitPrice)
+
     const MIN_RELEVANCE_SCORE = 30
-    const relevantProducts = filterAndSortByRelevance(allProducts, query, MIN_RELEVANCE_SCORE)
+    const relevantProducts = filterAndSortByRelevance(withPricePerUnit, query, MIN_RELEVANCE_SCORE)
+    console.log(
+      `After relevance filtering: ${relevantProducts.length}/${allProducts.length} products`,
+    )
 
-    console.log(`After relevance filtering: ${relevantProducts.length}/${allProducts.length} products (min score: ${MIN_RELEVANCE_SCORE})`)
-    if (relevantProducts.length > 0) {
-      console.log(`Top 3 scores: ${relevantProducts.slice(0, 3).map(p => p.relevanceScore).join(', ')}`)
-      console.log(`Sample top products:`, relevantProducts.slice(0, 2).map(p => ({ name: p.name, score: p.relevanceScore })))
-    }
+    const { groups, ungrouped } = enrichmentError
+      ? { groups: [], ungrouped: relevantProducts }
+      : groupProducts(relevantProducts)
+    console.log(`Created ${groups.length} groups; ${ungrouped.length} ungrouped`)
 
-    // Match and group products (only relevant ones)
-    const { groups, ungrouped } = matchProducts(relevantProducts)
-
-    console.log(`Created ${groups.length} product groups`)
-    console.log(`${ungrouped.length} products remain ungrouped`)
-
-    // Sort groups by their best relevance score
     const sortedGroups = sortGroupsByRelevance(groups, query)
-    console.log(`Sorted ${sortedGroups.length} groups by relevance`)
 
-    // Build response
     const response: SearchResult = {
       query,
       groups: sortedGroups,
@@ -75,6 +86,7 @@ export async function GET(request: NextRequest) {
       totalProducts: relevantProducts.length,
       countBySource,
       ...(Object.keys(sourceErrors).length > 0 ? { sourceErrors } : {}),
+      ...(enrichmentError ? { enrichmentError } : {}),
       timestamp: Date.now(),
     }
 
@@ -86,7 +98,7 @@ export async function GET(request: NextRequest) {
         error: 'Failed to perform search',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

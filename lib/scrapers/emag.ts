@@ -128,6 +128,7 @@ function parseCardLayout(html: string): Product[] {
       imageUrl,
       productUrl: url,
       source: SOURCE,
+      attributes: { organic: false },
     })
   }
 
@@ -200,6 +201,7 @@ function jsonLdToProduct(product: JsonLdProduct, idx: number): Product {
     productUrl: product.url ?? '',
     source: SOURCE,
     brand: brandName,
+    attributes: { organic: false },
   }
 }
 

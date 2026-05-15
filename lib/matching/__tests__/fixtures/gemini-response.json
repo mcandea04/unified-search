@@ -1,0 +1,32 @@
+[
+  {
+    "id": "emag-driedfruits-chia-200g",
+    "brand": "Driedfruits",
+    "kind": "chia seeds",
+    "organic": false,
+    "packGrams": 200,
+    "packMl": null,
+    "count": null,
+    "variant": ""
+  },
+  {
+    "id": "bebetei-driedfruits-chia-bio-200g",
+    "brand": "Driedfruits",
+    "kind": "chia seeds",
+    "organic": true,
+    "packGrams": 200,
+    "packMl": null,
+    "count": null,
+    "variant": "bio"
+  },
+  {
+    "id": "notino-solaris-chia-500g",
+    "brand": "Solaris",
+    "kind": "chia seeds",
+    "organic": false,
+    "packGrams": 500,
+    "packMl": null,
+    "count": null,
+    "variant": ""
+  }
+]
