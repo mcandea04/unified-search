@@ -190,6 +190,80 @@ describe('groupProducts', () => {
     expect(groups[0].matchConfidence).toBe('high')
   })
 
+  it('sorts products in a group by per-unit price ascending', () => {
+    const products = [
+      makeProduct({
+        name: 'Driedfruits chia 200g',
+        source: 'emag',
+        price: 25,
+        attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: false, pack: { value: 200, unit: 'g', original: '200g' } },
+        pricePerUnit: { value: 12.5, unit: 'g' },
+      }),
+      makeProduct({
+        name: 'Driedfruits chia 200g',
+        source: 'bebetei',
+        price: 18,
+        attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: false, pack: { value: 200, unit: 'g', original: '200g' } },
+        pricePerUnit: { value: 9.0, unit: 'g' },
+      }),
+      makeProduct({
+        name: 'Driedfruits chia 200g',
+        source: 'notino',
+        price: 22,
+        attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: false, pack: { value: 200, unit: 'g', original: '200g' } },
+        pricePerUnit: { value: 11.0, unit: 'g' },
+      }),
+    ]
+    const { groups } = groupProducts(products)
+    expect(groups[0].products.map((p) => p.source)).toEqual(['bebetei', 'notino', 'emag'])
+  })
+
+  it('breaks per-unit ties by price ascending', () => {
+    const products = [
+      makeProduct({
+        name: 'Driedfruits chia 200g',
+        source: 'emag',
+        price: 25,
+        attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: false, pack: { value: 200, unit: 'g', original: '200g' } },
+        pricePerUnit: { value: 10, unit: 'g' },
+      }),
+      makeProduct({
+        name: 'Driedfruits chia 200g',
+        source: 'bebetei',
+        price: 20,
+        attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: false, pack: { value: 200, unit: 'g', original: '200g' } },
+        pricePerUnit: { value: 10, unit: 'g' },
+      }),
+    ]
+    const { groups } = groupProducts(products)
+    expect(groups[0].products.map((p) => p.source)).toEqual(['bebetei', 'emag'])
+  })
+
+  it('falls back to price ascending when per-unit prices are absent', () => {
+    const products = [
+      makeProduct({
+        name: 'Driedfruits chia 200g',
+        source: 'emag',
+        price: 25,
+        attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: false, pack: { value: 200, unit: 'g', original: '200g' } },
+      }),
+      makeProduct({
+        name: 'Driedfruits chia 200g',
+        source: 'bebetei',
+        price: 18,
+        attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: false, pack: { value: 200, unit: 'g', original: '200g' } },
+      }),
+      makeProduct({
+        name: 'Driedfruits chia 200g',
+        source: 'notino',
+        price: 22,
+        attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: false, pack: { value: 200, unit: 'g', original: '200g' } },
+      }),
+    ]
+    const { groups } = groupProducts(products)
+    expect(groups[0].products.map((p) => p.source)).toEqual(['bebetei', 'notino', 'emag'])
+  })
+
   it('separates products with different kinds into different buckets', () => {
     const products = [
       makeProduct({

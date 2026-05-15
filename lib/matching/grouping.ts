@@ -68,6 +68,22 @@ function bestPerUnit(products: Product[]): {
   return { best: { value: bestVal, unit: bestUnit }, source: bestSrc }
 }
 
+function sortByBestFirst(products: Product[]): Product[] {
+  const units = new Set(
+    products.map((p) => p.pricePerUnit?.unit).filter(Boolean) as string[],
+  )
+  const ppuComparable = units.size === 1
+  const INF = Number.POSITIVE_INFINITY
+  return products.slice().sort((a, b) => {
+    if (ppuComparable) {
+      const av = a.pricePerUnit?.value ?? INF
+      const bv = b.pricePerUnit?.value ?? INF
+      if (av !== bv) return av - bv
+    }
+    return a.price - b.price
+  })
+}
+
 interface Bucket {
   items: Product[]
   sources: Set<SourceSite>
@@ -100,7 +116,7 @@ export function groupProducts(
     groups.push({
       id: `group-${groups.length}`,
       matchedName: pickMatchedName(items),
-      products: items,
+      products: sortByBestFirst(items),
       bestPrice,
       bestPriceSource: bestPriceProduct.source,
       matchConfidence: confidenceFor(bucket.sources, aggregated),
