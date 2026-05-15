@@ -153,9 +153,8 @@ export default function Home() {
                 {/* Table Header */}
                 <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/20 rounded-lg mb-2 text-slate-400 text-xs sm:text-sm font-medium uppercase tracking-wider border-b border-slate-700/30">
                   <div className="col-span-1">Image</div>
-                  <div className="col-span-5">Product</div>
-                  <div className="col-span-2">Pack</div>
-                  <div className="col-span-2">Merchant</div>
+                  <div className="col-span-6">Product</div>
+                  <div className="col-span-3">Merchant</div>
                   <div className="col-span-2 text-right">Price</div>
                 </div>
 
@@ -182,7 +181,7 @@ export default function Home() {
                             <div className="w-12 h-12 bg-slate-800/40 rounded border border-slate-700/50"></div>
                           )}
                         </div>
-                        <div className="col-span-5">
+                        <div className="col-span-6">
                           <a
                             href={product.productUrl}
                             target="_blank"
@@ -197,8 +196,7 @@ export default function Home() {
                             </span>
                           )}
                         </div>
-                        <div className="col-span-2 text-slate-300 text-sm">{packLabel(product)}</div>
-                        <div className="col-span-2">
+                        <div className="col-span-3">
                           <span className="text-slate-300 text-sm font-medium">{product.source}</span>
                         </div>
                         <div className="col-span-2 flex flex-col items-end">
