@@ -20,6 +20,40 @@ export async function fetchHtml(url: string, init: RequestInit = {}): Promise<Re
   return fetch(url, { ...init, headers })
 }
 
+export interface FetchResult {
+  status: number
+  ok: boolean
+  text(): Promise<string>
+}
+
+// Lazy singleton — defers native .so load until first request (Vercel cold-start).
+let tlsSessionPromise: Promise<import('node-tls-client').Session> | null = null
+
+function getTlsSession(): Promise<import('node-tls-client').Session> {
+  if (!tlsSessionPromise) {
+    tlsSessionPromise = (async () => {
+      const { Session, ClientIdentifier, initTLS } = await import('node-tls-client')
+      await initTLS()
+      return new Session({ clientIdentifier: ClientIdentifier.chrome_131, timeout: 20_000 })
+    })()
+  }
+  return tlsSessionPromise
+}
+
+export async function fetchHtmlImpersonated(
+  url: string,
+  extraHeaders?: Record<string, string>
+): Promise<FetchResult> {
+  const session = await getTlsSession()
+  const headers = { ...DEFAULT_HEADERS, ...extraHeaders }
+  const res = await session.get(url, { headers })
+  return {
+    status: res.status,
+    ok: res.ok,
+    text: () => Promise.resolve(res.body),
+  }
+}
+
 const CLOUDFLARE_MARKERS = [
   'cf-browser-verification',
   'challenges.cloudflare.com',

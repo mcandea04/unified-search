@@ -3,7 +3,7 @@ import {
   extractJsonLd,
   extractProductsByRegex,
   extractProductsFromJsonLd,
-  fetchHtml,
+  fetchHtmlImpersonated,
   looksLikeCloudflareChallenge,
   normalizePrice,
   type JsonLdProduct,
@@ -16,12 +16,9 @@ export async function scrapeNotino(query: string): Promise<ScraperResponse> {
   const url = `${BASE_URL}/search.asp?exps=${encodeURIComponent(query)}`
 
   try {
-    const res = await fetchHtml(url, {
-      headers: {
-        referer: `${BASE_URL}/`,
-      },
-    })
+    const res = await fetchHtmlImpersonated(url, { referer: `${BASE_URL}/` })
     const html = await res.text()
+    console.log(`[Notino] impersonated fetch status=${res.status} size=${html.length}`)
 
     if (looksLikeCloudflareChallenge(html)) {
       console.warn(
@@ -45,7 +42,7 @@ export async function scrapeNotino(query: string): Promise<ScraperResponse> {
 
     return { source: SOURCE, products: products.slice(0, 20), success: true }
   } catch (error) {
-    console.error('Notino scraper error:', error)
+    console.error('[Notino] scraper error:', error)
     return {
       source: SOURCE,
       products: [],
