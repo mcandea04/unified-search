@@ -38,10 +38,12 @@ function buildPrompt(query: string, products: Product[]): string {
   return `You are categorizing products from a Romanian price-comparison search.
 Query: "${query}"
 
+Products with the same kind, pack size, and organic flag will be grouped together for price comparison — so kind must be identical for equivalent products regardless of brand. Use the most specific consistent label you can (e.g. all whole black peppercorns get "whole peppercorn", all ground black pepper get "ground pepper" — never mix them).
+
 For each product return:
 - id: same id as input
 - brand: normalized canonical brand spelling (e.g. "Cotanyi" -> "Kotanyi"); empty string if unknown
-- kind: short category in English (e.g. "chia seeds", "ground pepper", "diapers", "shampoo")
+- kind: short category in English, consistent across brands (e.g. "chia seeds", "ground pepper", "whole peppercorn", "diapers", "shampoo")
 - organic: true if the name contains bio/organic/eco/ecologic
 - packGrams: pack weight in grams as a number, or null
 - packMl: pack volume in ml as a number, or null

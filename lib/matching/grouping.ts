@@ -14,7 +14,6 @@ function packSignature(attrs: ProductAttributes): string {
 
 function bucketKey(attrs: ProductAttributes): string {
   return [
-    attrs.brand ?? 'unknown',
     attrs.kind ?? '',
     packSignature(attrs),
     attrs.diaperSize ?? '',

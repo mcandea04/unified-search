@@ -17,7 +17,7 @@ function makeProduct(
 }
 
 describe('groupProducts', () => {
-  it('groups same brand + kind + pack + organic across sources', () => {
+  it('groups same kind + pack + organic across sources regardless of brand', () => {
     const products = [
       makeProduct({
         name: 'Seminte chia bio Driedfruits 200g',
@@ -26,10 +26,10 @@ describe('groupProducts', () => {
         attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: true, pack: { value: 200, unit: 'g', original: '200g' } },
       }),
       makeProduct({
-        name: 'Driedfruits chia bio 200g',
+        name: 'Solaris chia bio 200g',
         source: 'bebetei',
         price: 22,
-        attributes: { brand: 'Driedfruits', kind: 'chia seeds', organic: true, pack: { value: 200, unit: 'g', original: '200g' } },
+        attributes: { brand: 'Solaris', kind: 'chia seeds', organic: true, pack: { value: 200, unit: 'g', original: '200g' } },
       }),
       makeProduct({
         name: 'Driedfruits chia 200g',
