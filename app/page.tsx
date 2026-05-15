@@ -228,6 +228,12 @@ export default function Home() {
             {/* Ungrouped Products */}
             {ungrouped.length > 0 && (
               <div className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-8 fade-in-up">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-slate-400">Other results</h3>
+                  <div className="px-3 py-1 rounded-full bg-slate-700/40 border border-slate-600/30">
+                    <span className="text-slate-400 text-sm">{ungrouped.length} products</span>
+                  </div>
+                </div>
                 {/* Table Header */}
                 <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/20 rounded-lg mb-2 text-slate-400 text-xs sm:text-sm font-medium uppercase tracking-wider border-b border-slate-700/30">
                   <div className="col-span-1">Image</div>
