@@ -6,29 +6,16 @@ import type {
   SourceSite,
 } from '../types'
 
-const STOPWORDS = new Set(['de', 'pentru', 'cu', 'din', 'la', 'si', '&', '-'])
-
-function normalizeQuery(query: string): string {
-  const tokens = String(query || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9+]+/g, ' ')
-    .split(' ')
-    .filter((t) => t && !STOPWORDS.has(t))
-  return tokens.sort().join(' ')
-}
-
 function packSignature(attrs: ProductAttributes): string {
   if (attrs.pack) return `${attrs.pack.value}${attrs.pack.unit}`
   if (typeof attrs.count === 'number') return `${attrs.count}pcs`
   return ''
 }
 
-function bucketKey(attrs: ProductAttributes, kind: string): string {
+function bucketKey(attrs: ProductAttributes): string {
   return [
     attrs.brand ?? 'unknown',
-    kind,
+    attrs.kind ?? '',
     packSignature(attrs),
     attrs.diaperSize ?? '',
     attrs.organic ? 'bio' : 'nonbio',
@@ -89,13 +76,11 @@ interface Bucket {
 
 export function groupProducts(
   products: Array<Product & { attributes: ProductAttributes }>,
-  query: string,
 ): { groups: ProductGroup[]; ungrouped: Product[] } {
-  const kind = normalizeQuery(query)
   const buckets = new Map<string, Bucket>()
   for (const product of products) {
     if (!product.name) continue
-    const key = bucketKey(product.attributes, kind)
+    const key = bucketKey(product.attributes)
     const bucket = buckets.get(key) ?? { items: [], sources: new Set<SourceSite>() }
     bucket.items.push(product)
     bucket.sources.add(product.source)

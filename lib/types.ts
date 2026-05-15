@@ -8,6 +8,7 @@ export type SourceSite = 'emag' | 'bebetei' | 'notino' | 'trendyol'
  */
 export interface ProductAttributes {
   brand?: string
+  kind?: string
   organic: boolean
   pack?: { value: number; unit: 'g' | 'ml'; original: string }
   count?: number
@@ -71,6 +72,7 @@ export interface SearchResult {
   totalProducts: number
   countBySource: Record<SourceSite, number>
   sourceErrors?: Partial<Record<SourceSite, string>>
+  enrichmentError?: string
   timestamp: number
 }
 

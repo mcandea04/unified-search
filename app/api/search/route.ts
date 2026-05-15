@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { scrapeAllSites } from '@/lib/scrapers'
-import { extractAttributes } from '@/lib/matching/attributes'
+import { enrichWithLLM } from '@/lib/matching/llm-attributes'
 import { groupProducts } from '@/lib/matching/grouping'
 import { filterAndSortByRelevance, sortGroupsByRelevance } from '@/lib/matching/relevance'
 import type {
@@ -24,10 +24,9 @@ function computePerUnitPrice(price: number, attrs: ProductAttributes): PerUnitPr
   return undefined
 }
 
-function enrich(product: Product): Product {
-  const attributes = extractAttributes(product)
-  const pricePerUnit = computePerUnitPrice(product.price, attributes)
-  return { ...product, attributes, pricePerUnit }
+function applyPerUnitPrice(product: Product): Product {
+  const pricePerUnit = computePerUnitPrice(product.price, product.attributes)
+  return { ...product, pricePerUnit }
 }
 
 export async function GET(request: NextRequest) {
@@ -53,9 +52,8 @@ export async function GET(request: NextRequest) {
 
     for (const result of scraperResults) {
       if (result.success) {
-        const enriched = result.products.map(enrich)
-        allProducts.push(...enriched)
-        countBySource[result.source] = enriched.length
+        allProducts.push(...result.products)
+        countBySource[result.source] = result.products.length
       } else {
         console.error(`Failed to scrape ${result.source}:`, result.error)
         sourceErrors[result.source] = result.error ?? 'unknown'
@@ -65,13 +63,16 @@ export async function GET(request: NextRequest) {
     console.log(`Found ${allProducts.length} total products`)
     console.log(`By source:`, countBySource)
 
+    const { products: enriched, error: enrichmentError } = await enrichWithLLM(allProducts, query)
+    const withPricePerUnit = enriched.map(applyPerUnitPrice)
+
     const MIN_RELEVANCE_SCORE = 30
-    const relevantProducts = filterAndSortByRelevance(allProducts, query, MIN_RELEVANCE_SCORE)
+    const relevantProducts = filterAndSortByRelevance(withPricePerUnit, query, MIN_RELEVANCE_SCORE)
     console.log(
       `After relevance filtering: ${relevantProducts.length}/${allProducts.length} products`,
     )
 
-    const { groups, ungrouped } = groupProducts(relevantProducts, query)
+    const { groups, ungrouped } = groupProducts(relevantProducts)
     console.log(`Created ${groups.length} groups; ${ungrouped.length} ungrouped`)
 
     const sortedGroups = sortGroupsByRelevance(groups, query)
@@ -83,6 +84,7 @@ export async function GET(request: NextRequest) {
       totalProducts: relevantProducts.length,
       countBySource,
       ...(Object.keys(sourceErrors).length > 0 ? { sourceErrors } : {}),
+      ...(enrichmentError ? { enrichmentError } : {}),
       timestamp: Date.now(),
     }
 

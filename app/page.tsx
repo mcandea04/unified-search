@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { ProductGroup, Product, PerUnitPrice } from '@/lib/types'
+import type { ProductGroup, Product, PerUnitPrice, SearchResult } from '@/lib/types'
 
 function formatPerUnit(ppu: PerUnitPrice | undefined): string | null {
   if (!ppu) return null
@@ -23,18 +23,21 @@ export default function Home() {
   const [ungrouped, setUngrouped] = useState<Product[]>([])
   const [totalProducts, setTotalProducts] = useState(0)
   const [hasSearched, setHasSearched] = useState(false)
+  const [enrichmentError, setEnrichmentError] = useState<string | undefined>()
 
   const handleSearch = async () => {
     if (!query.trim()) return
 
     setLoading(true)
     setHasSearched(true)
+    setEnrichmentError(undefined)
     try {
       const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
-      const data = await response.json()
+      const data: SearchResult = await response.json()
       setGroups(data.groups || [])
       setUngrouped(data.ungrouped || [])
       setTotalProducts(data.totalProducts || 0)
+      setEnrichmentError(data.enrichmentError)
     } catch (error) {
       console.error('Search error:', error)
     } finally {
@@ -109,6 +112,13 @@ export default function Home() {
         {/* Results */}
         {!loading && hasSearched && (groups.length > 0 || ungrouped.length > 0) && (
           <div className="max-w-7xl mx-auto">
+            {/* Enrichment error banner */}
+            {enrichmentError && (
+              <div className="mb-4 px-4 py-3 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-300 text-sm">
+                ⚠ {enrichmentError} — showing raw results without grouping.
+              </div>
+            )}
+
             {/* Stats Bar */}
             <div className="glass-card rounded-lg sm:rounded-xl p-4 sm:p-6 mb-4 sm:mb-8 fade-in-up delay-2">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">

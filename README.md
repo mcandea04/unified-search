@@ -15,9 +15,21 @@ Web app that searches three Romanian e-commerce sites (eMAG, BebeTei, Notino) in
 - Next.js 16 (App Router) + React 19
 - TypeScript, Tailwind CSS v4
 - Server-side HTML fetch + JSON-LD parsing (no headless browser)
-- Fuse.js for fuzzy matching
+- Gemini Flash for LLM-based product categorization and brand normalization
 
 ## Getting Started
+
+1. Copy `.env.example` to `.env.local` and fill in your Gemini API key:
+
+```bash
+cp .env.example .env.local
+# edit .env.local and set GOOGLE_API_KEY=<your key>
+```
+
+Get a free key at https://aistudio.google.com/apikey (250 req/day, no billing needed).
+Restrict the key to "Generative Language API" only.
+
+2. Install and run:
 
 ```bash
 npm install
@@ -26,12 +38,15 @@ npm run dev
 
 Open http://localhost:3000 and search.
 
+> Without `GOOGLE_API_KEY`, the app still works but products won't be grouped by brand/category.
+
 ## How it Works
 
-1. `GET /api/search?q=<query>` runs three parallel `fetch` calls to eMAG, BebeTei, and Notino search pages.
-2. Each connector extracts products from JSON-LD `@type: Product` blocks, with a regex anchor-scan fallback when no JSON-LD is present.
-3. Products are scored for relevance against the query (exact match, word overlap, word order, fuzzy similarity) and filtered below a minimum score.
-4. Remaining products are grouped across sites by name similarity; the lowest price in each group gets a "BEST" badge.
+1. `GET /api/search?q=<query>` runs four parallel `fetch` calls to eMAG, BebeTei, Notino, and Trendyol.
+2. Each connector extracts products from JSON-LD `@type: Product` blocks, with a regex anchor-scan fallback.
+3. A single Gemini Flash batch call enriches all products with brand, kind, pack size, organic flag, and count.
+4. Products are scored for relevance and filtered below a minimum score.
+5. Remaining products are grouped by `brand + kind + pack + organic` across sources; the lowest price in each group gets a "BEST" badge.
 
 ## Project Structure
 
@@ -51,7 +66,8 @@ lib/
     index.ts            # Parallel orchestrator
   matching/
     relevance.ts        # 0-100 scoring + sort
-    fuzzy-match.ts      # Cross-site grouping
+    llm-attributes.ts   # Gemini Flash batch enrichment
+    grouping.ts         # Brand/kind/pack bucket grouping
 ```
 
 ## API
