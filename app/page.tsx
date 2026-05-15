@@ -170,9 +170,9 @@ export default function Home() {
                     return (
                       <div
                         key={pIdx}
-                        className="grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all duration-200 items-center"
+                        className="flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 px-4 py-3 bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all duration-200 sm:items-center"
                       >
-                        <div className="col-span-1">
+                        <div className="sm:col-span-1">
                           {product.imageUrl ? (
                             <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded bg-white">
                               <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-full object-contain" />
@@ -181,7 +181,7 @@ export default function Home() {
                             <div className="w-12 h-12 bg-slate-800/40 rounded border border-slate-700/50"></div>
                           )}
                         </div>
-                        <div className="col-span-6">
+                        <div className="sm:col-span-6">
                           <a
                             href={product.productUrl}
                             target="_blank"
@@ -196,26 +196,28 @@ export default function Home() {
                             </span>
                           )}
                         </div>
-                        <div className="col-span-3">
-                          <span className="text-slate-300 text-sm font-medium">{product.source}</span>
-                        </div>
-                        <div className="col-span-2 flex flex-col items-end">
-                          <div className="flex items-baseline gap-1">
-                            <span className="price-display text-lg font-semibold text-slate-100">{product.price}</span>
-                            <span className="text-slate-400 text-sm">RON</span>
+                        <div className="flex justify-between items-start w-full sm:contents">
+                          <div className="sm:col-span-3">
+                            <span className="text-slate-300 text-sm font-medium">{product.source}</span>
                           </div>
-                          {ppuText && <div className="text-slate-500 text-xs mt-0.5">{ppuText}</div>}
-                          <div className="flex gap-1 mt-1">
-                            {product.price === group.bestPrice && (
-                              <span className="px-2 py-0.5 bg-gradient-to-r from-rose-500/20 to-orange-500/20 border border-rose-500/30 rounded text-rose-400 text-[10px] font-bold whitespace-nowrap">
-                                BEST
-                              </span>
-                            )}
-                            {isBestUnit && product.price !== group.bestPrice && (
-                              <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded text-amber-300 text-[10px] font-bold whitespace-nowrap">
-                                BEST/UNIT
-                              </span>
-                            )}
+                          <div className="sm:col-span-2 flex flex-col sm:items-end">
+                            <div className="flex items-baseline gap-1">
+                              <span className="price-display text-lg font-semibold text-slate-100">{product.price}</span>
+                              <span className="text-slate-400 text-sm">RON</span>
+                            </div>
+                            {ppuText && <div className="text-slate-500 text-xs mt-0.5">{ppuText}</div>}
+                            <div className="flex gap-1 mt-1">
+                              {product.price === group.bestPrice && (
+                                <span className="px-2 py-0.5 bg-gradient-to-r from-rose-500/20 to-orange-500/20 border border-rose-500/30 rounded text-rose-400 text-[10px] font-bold whitespace-nowrap">
+                                  BEST
+                                </span>
+                              )}
+                              {isBestUnit && product.price !== group.bestPrice && (
+                                <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded text-amber-300 text-[10px] font-bold whitespace-nowrap">
+                                  BEST/UNIT
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -245,50 +247,55 @@ export default function Home() {
 
                 {/* Table Rows */}
                 <div className="space-y-1">
-                  {ungrouped.map((product, idx) => (
-                    <div
-                      key={`ungrouped-${idx}`}
-                      className="grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all duration-200 items-center"
-                    >
-                      <div className="col-span-1">
-                        {product.imageUrl ? (
-                          <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded bg-white">
-                            <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-full object-contain" />
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 bg-slate-800/40 rounded border border-slate-700/50"></div>
-                        )}
-                      </div>
-                      <div className="col-span-5">
-                        <a
-                          href={product.productUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-cyan-300 hover:text-cyan-200 visited:text-cyan-300 hover:visited:text-cyan-200 underline decoration-cyan-500/30 hover:decoration-cyan-500/60 text-sm font-medium transition-colors line-clamp-2"
-                        >
-                          {product.name}
-                        </a>
-                        {product.attributes.organic && (
-                          <span className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded">
-                            bio
-                          </span>
-                        )}
-                      </div>
-                      <div className="col-span-2 text-slate-300 text-sm">{packLabel(product)}</div>
-                      <div className="col-span-2">
-                        <span className="text-slate-300 text-sm font-medium">{product.source}</span>
-                      </div>
-                      <div className="col-span-2 flex flex-col items-end">
-                        <div className="flex items-baseline gap-1">
-                          <span className="price-display text-lg font-semibold text-slate-100">{product.price}</span>
-                          <span className="text-slate-400 text-sm">RON</span>
+                  {ungrouped.map((product, idx) => {
+                    const packText = packLabel(product)
+                    return (
+                      <div
+                        key={`ungrouped-${idx}`}
+                        className="flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 px-4 py-3 bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all duration-200 sm:items-center"
+                      >
+                        <div className="sm:col-span-1">
+                          {product.imageUrl ? (
+                            <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded bg-white">
+                              <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-full object-contain" />
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 bg-slate-800/40 rounded border border-slate-700/50"></div>
+                          )}
                         </div>
-                        {formatPerUnit(product.pricePerUnit) && (
-                          <div className="text-slate-500 text-xs mt-0.5">{formatPerUnit(product.pricePerUnit)}</div>
-                        )}
+                        <div className="sm:col-span-5">
+                          <a
+                            href={product.productUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-cyan-300 hover:text-cyan-200 visited:text-cyan-300 hover:visited:text-cyan-200 underline decoration-cyan-500/30 hover:decoration-cyan-500/60 text-sm font-medium transition-colors line-clamp-2"
+                          >
+                            {product.name}
+                          </a>
+                          {product.attributes.organic && (
+                            <span className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded">
+                              bio
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap justify-between items-start gap-x-3 gap-y-1 w-full sm:contents">
+                          {packText && <div className="sm:col-span-2 text-slate-300 text-sm">{packText}</div>}
+                          <div className="sm:col-span-2">
+                            <span className="text-slate-300 text-sm font-medium">{product.source}</span>
+                          </div>
+                          <div className="sm:col-span-2 flex flex-col sm:items-end">
+                            <div className="flex items-baseline gap-1">
+                              <span className="price-display text-lg font-semibold text-slate-100">{product.price}</span>
+                              <span className="text-slate-400 text-sm">RON</span>
+                            </div>
+                            {formatPerUnit(product.pricePerUnit) && (
+                              <div className="text-slate-500 text-xs mt-0.5">{formatPerUnit(product.pricePerUnit)}</div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
