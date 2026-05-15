@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['node-tls-client', 'koffi'],
   images: {
     remotePatterns: [
       {
