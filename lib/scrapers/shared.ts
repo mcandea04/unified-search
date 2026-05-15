@@ -46,7 +46,7 @@ export async function fetchHtmlImpersonated(
 ): Promise<FetchResult> {
   const session = await getTlsSession()
   const headers = { ...DEFAULT_HEADERS, ...extraHeaders }
-  const res = await session.get(url, { headers })
+  const res = await session.get(url, { headers, followRedirects: true })
   return {
     status: res.status,
     ok: res.ok,
