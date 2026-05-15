@@ -72,7 +72,9 @@ export async function GET(request: NextRequest) {
       `After relevance filtering: ${relevantProducts.length}/${allProducts.length} products`,
     )
 
-    const { groups, ungrouped } = groupProducts(relevantProducts)
+    const { groups, ungrouped } = enrichmentError
+      ? { groups: [], ungrouped: relevantProducts }
+      : groupProducts(relevantProducts)
     console.log(`Created ${groups.length} groups; ${ungrouped.length} ungrouped`)
 
     const sortedGroups = sortGroupsByRelevance(groups, query)
