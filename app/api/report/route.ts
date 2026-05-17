@@ -130,7 +130,12 @@ export async function POST(request: NextRequest) {
   const subject = `[unified-search] Bug report: "${query}"`
   const emailFrom = process.env.REPORT_EMAIL_FROM || 'onboarding@resend.dev'
 
-  const { text, html } = buildEmailBody(body)
+  let text: string, html: string
+  try {
+    ;({ text, html } = buildEmailBody(body))
+  } catch {
+    return NextResponse.json({ ok: false, error: 'Invalid report payload.' }, { status: 400 })
+  }
 
   // Send via Resend HTTP API — no SDK needed, keeps dependencies unchanged.
   const resendRes = await fetch('https://api.resend.com/emails', {
