@@ -1,171 +1,118 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 @import "tailwindcss";
 @source "../app/**/*.{ts,tsx,js,jsx}";
 
-:root {
-  /* Deep indigo base palette */
-  --color-primary: 15 23 41; /* Deep navy */
-  --color-secondary: 30 41 59; /* Slate-800 */
-  --color-accent-cyan: 0 245 255; /* Neon cyan */
-  --color-accent-purple: 168 85 247; /* Electric purple */
-  --color-accent-coral: 251 113 133; /* Vibrant coral */
-  --color-surface: 17 24 39; /* Card background */
-  --color-border: 51 65 85; /* Subtle borders */
+@theme {
+  --color-bg: var(--bg);
+  --color-bg-elev: var(--bg-elev);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
 
-  /* Text colors */
-  --color-text-primary: 248 250 252;
-  --color-text-secondary: 203 213 225;
-  --color-text-muted: 148 163 184;
+  --font-display: var(--font-fraunces, 'Fraunces'), Georgia, serif;
+  --font-sans: var(--font-dm-sans, 'DM Sans'), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: var(--font-plex-mono, 'IBM Plex Mono'), 'JetBrains Mono', monospace;
+}
+
+:root,
+[data-theme="dark"] {
+  --bg: #181613;
+  --bg-elev: #1f1c18;
+  --text: #e8e2d4;
+  --text-muted: #8a8475;
+  --rule: #2a241d;
+  --accent: #d4a44d;
+  --accent-ink: #181613;
+}
+
+[data-theme="light"] {
+  --bg: #f4f0e6;
+  --bg-elev: #faf6ea;
+  --text: #181613;
+  --text-muted: #6b6555;
+  --rule: #d8d2c2;
+  --accent: #8b3a1f;
+  --accent-ink: #f4f0e6;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  background: var(--bg);
+}
+
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: rgb(var(--color-text-primary));
-  background: linear-gradient(135deg, rgb(15, 23, 41) 0%, rgb(17, 24, 39) 50%, rgb(30, 41, 59) 100%);
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
   min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
-/* Animated background grid */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image:
-    linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
-  background-size: 100px 100px;
-  pointer-events: none;
-  z-index: 0;
-  animation: gridMove 20s linear infinite;
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
-@keyframes gridMove {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(100px, 100px);
-  }
+.editorial-display {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 0.95;
 }
 
-/* Gradient text utility */
-.gradient-text {
-  background: linear-gradient(135deg, rgb(0, 245, 255), rgb(168, 85, 247));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.editorial-meta {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
 }
 
-/* Glass card utility */
-.glass-card {
-  background: rgba(17, 24, 39, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(var(--color-accent-cyan), 0.1);
-  box-shadow:
-    0 0 0 1px rgba(var(--color-accent-cyan), 0.05),
-    0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.editorial-row {
+  border-bottom: 1px dotted var(--rule);
 }
 
-.glass-card:hover {
-  border-color: rgba(var(--color-accent-cyan), 0.3);
-  box-shadow:
-    0 0 0 1px rgba(var(--color-accent-cyan), 0.2),
-    0 0 30px -5px rgba(0, 245, 255, 0.2),
-    0 20px 40px -10px rgba(0, 0, 0, 0.6);
-  transform: translateY(-2px);
-}
-
-/* Price display with monospace */
 .price-display {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-feature-settings: 'tnum' on, 'lnum' on;
   letter-spacing: 0;
 }
 
-/* Staggered fade-in animation */
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in-up {
-  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   opacity: 0;
 }
 
-/* Stagger delays */
-.delay-1 { animation-delay: 0.1s; }
-.delay-2 { animation-delay: 0.2s; }
-.delay-3 { animation-delay: 0.3s; }
-.delay-4 { animation-delay: 0.4s; }
+.delay-1 { animation-delay: 0.08s; }
+.delay-2 { animation-delay: 0.16s; }
+.delay-3 { animation-delay: 0.24s; }
+.delay-4 { animation-delay: 0.32s; }
 
-/* Glow effect for accents */
-.glow-cyan {
-  box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 1s linear infinite; }
+
+@keyframes pulseFade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
+.animate-pulse { animation: pulseFade 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
-.glow-purple {
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
-}
-
-/* Spinner animation */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* Pulse animation for loading */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Force input text and background to be visible */
-input[type="text"] {
-  color: #f8fafc !important;
-  background-color: #0f172a !important;
-  -webkit-text-fill-color: #f8fafc !important;
-}
-
-input[type="text"]::placeholder {
-  color: #64748b !important;
-  -webkit-text-fill-color: #64748b !important;
-}
-
-/* Ensure focused input maintains dark background */
-input[type="text"]:focus {
-  background-color: #0f172a !important;
+@media (prefers-reduced-motion: reduce) {
+  body { transition: none; }
+  .fade-in-up { animation: none; opacity: 1; }
+  .animate-spin { animation: none; }
+  .animate-pulse { animation: none; }
 }
