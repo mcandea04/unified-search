@@ -40,22 +40,21 @@ describe('readStoredTheme', () => {
 })
 
 describe('readSystemTheme', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
   it('returns "light" when prefers-color-scheme: light matches', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
     expect(readSystemTheme()).toBe('light')
-    vi.unstubAllGlobals()
   })
 
   it('returns "dark" when prefers-color-scheme: light does not match', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     expect(readSystemTheme()).toBe('dark')
-    vi.unstubAllGlobals()
   })
 
   it('returns "dark" when matchMedia is unavailable', () => {
     vi.stubGlobal('matchMedia', undefined)
     expect(readSystemTheme()).toBe('dark')
-    vi.unstubAllGlobals()
   })
 })
 

@@ -10,8 +10,8 @@ export function readStoredTheme(): Theme | null {
 }
 
 export function readSystemTheme(): Theme {
-  if (typeof matchMedia !== 'function') return 'dark'
-  return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+  if (typeof globalThis.matchMedia !== 'function') return 'dark'
+  return globalThis.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
 }
 
 export function resolveInitialTheme(stored: Theme | null, system: Theme): Theme {
