@@ -130,42 +130,44 @@ export default function Home() {
     <main className="min-h-screen relative">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-12 relative z-10">
         {/* Header */}
-        <div className="text-center mb-8 sm:mb-16 fade-in-up">
-          <div className="hidden sm:inline-block mb-4 sm:mb-6">
-            <div className="flex items-center gap-2 sm:gap-4 px-4 sm:px-6 py-2 sm:py-3 rounded-full border border-cyan-500/20 bg-cyan-500/5">
-              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-cyan-400 animate-pulse"></div>
-              <span className="text-xs sm:text-base md:text-lg font-medium text-cyan-400 tracking-wide">LIVE PRICE INTELLIGENCE</span>
-            </div>
+        <div className="text-left sm:text-center mb-8 sm:mb-14 fade-in-up max-w-3xl mx-auto">
+          <div className="editorial-meta mb-3 sm:mb-4 flex items-center gap-2 justify-start sm:justify-center">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" aria-hidden="true"></span>
+            <span>Vol 1 · Live price intel · eMAG / BebeTei / Notino / Trendyol</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 gradient-text tracking-tight px-2">
+          <h1
+            className="editorial-display text-text mb-3 sm:mb-4"
+            style={{ fontSize: 'clamp(2.5rem, 8vw, 4.75rem)' }}
+          >
             Unified Search
           </h1>
-          <p className="text-sm sm:text-lg md:text-2xl text-slate-400 font-light px-4">
-            Multi-source price discovery across <span className="text-cyan-400 font-medium">eMAG</span>, <span className="text-purple-400 font-medium">BebeTei</span>, <span className="text-rose-400 font-medium">Notino</span> & <span className="text-orange-400 font-medium">Trendyol</span>
+          <p className="text-text-muted text-base sm:text-lg max-w-xl mx-auto">
+            Live price intelligence across four marketplaces, ranked by per-unit value.
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="max-w-2xl mx-auto mb-8 sm:mb-16 fade-in-up delay-1">
-          <div className="flex gap-2 sm:gap-3">
+        <div className="max-w-2xl mx-auto mb-10 sm:mb-14 fade-in-up delay-1">
+          <div className="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Search..."
-              className="flex-1 px-3 sm:px-8 py-3 sm:py-6 text-base sm:text-2xl bg-slate-900 rounded-lg sm:rounded-xl border-2 border-slate-700 focus:outline-none focus:border-cyan-500 focus:bg-slate-900 text-white placeholder:text-slate-500 transition-all"
+              placeholder="Search…"
+              className="flex-1 bg-transparent border-0 border-b-2 border-text px-1 py-3 text-2xl sm:text-3xl font-display italic text-text placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+              style={{ fontFamily: 'var(--font-display)' }}
             />
             <button
               onClick={handleSearch}
               disabled={loading || !query.trim()}
               aria-label={loading ? 'Searching for products' : 'Search for products'}
-              className="px-4 sm:px-16 py-3 sm:py-6 text-base sm:text-xl text-white bg-gradient-to-r from-cyan-600 to-purple-700 hover:from-cyan-500 hover:to-purple-600 disabled:from-slate-700 disabled:to-slate-600 font-black rounded-lg sm:rounded-xl transition-all duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-cyan-500/25 disabled:shadow-none whitespace-nowrap"
+              className="px-6 py-3 sm:py-4 text-sm font-mono uppercase tracking-[0.1em] bg-accent text-accent-ink hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity whitespace-nowrap"
             >
               {loading ? (
-                <span className="flex items-center justify-center gap-1 sm:gap-3" aria-hidden="true">
-                  <div className="w-4 h-4 sm:w-6 sm:h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span className="hidden sm:inline">Searching...</span>
+                <span className="flex items-center justify-center gap-2" aria-hidden="true">
+                  <span className="w-4 h-4 border-2 border-accent-ink/30 border-t-accent-ink rounded-full animate-spin" />
+                  <span>Searching…</span>
                 </span>
               ) : (
                 'Search'
@@ -176,15 +178,15 @@ export default function Home() {
 
         {/* Loading State */}
         {loading && (
-          <div className="text-center py-8 sm:py-16">
-            <div className="inline-flex flex-col items-center gap-4 sm:gap-8">
-              <div className="relative">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 border-4 border-slate-700 rounded-full"></div>
-                <div className="w-16 h-16 sm:w-20 sm:h-20 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+          <div className="text-center py-10 sm:py-16">
+            <div className="inline-flex flex-col items-center gap-5">
+              <div className="relative w-14 h-14">
+                <div className="absolute inset-0 border-2 border-rule rounded-full"></div>
+                <div className="absolute inset-0 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
               </div>
-              <div className="space-y-2 sm:space-y-3">
-                <p className="text-slate-300 font-medium text-lg sm:text-2xl">Scanning marketplaces...</p>
-                <p className="text-slate-500 text-sm sm:text-lg">Analyzing prices across all sources</p>
+              <div className="space-y-1">
+                <p className="editorial-meta">Scanning marketplaces…</p>
+                <p className="text-text-muted text-sm">Analyzing prices across all sources</p>
               </div>
             </div>
           </div>
@@ -394,15 +396,15 @@ export default function Home() {
 
         {/* No Results */}
         {!loading && hasSearched && totalProducts === 0 && (
-          <div className="text-center py-8 sm:py-16 fade-in-up">
-            <div className="glass-card rounded-xl sm:rounded-2xl p-8 sm:p-12 max-w-md mx-auto">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 sm:mb-6 rounded-full bg-slate-800/60 border border-slate-700/50 flex items-center justify-center">
-                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <p className="text-lg sm:text-xl font-semibold text-slate-300 mb-2">No results found</p>
-              <p className="text-sm sm:text-base text-slate-500">Try searching for &quot;{query}&quot; with different keywords</p>
+          <div className="text-center py-10 sm:py-16 fade-in-up">
+            <div className="border border-rule bg-bg-elev p-8 sm:p-10 max-w-md mx-auto rounded-md">
+              <p className="editorial-meta mb-2">No matches</p>
+              <p className="text-text text-xl sm:text-2xl mb-2 font-display italic" style={{ fontFamily: 'var(--font-display)' }}>
+                Nothing found.
+              </p>
+              <p className="text-text-muted text-sm">
+                Try searching for &quot;{query}&quot; with different keywords.
+              </p>
             </div>
           </div>
         )}
