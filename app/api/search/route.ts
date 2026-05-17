@@ -83,6 +83,7 @@ export async function GET(request: NextRequest) {
       query,
       groups: sortedGroups,
       ungrouped,
+      rawProducts: allProducts,
       totalProducts: relevantProducts.length,
       countBySource,
       ...(Object.keys(sourceErrors).length > 0 ? { sourceErrors } : {}),

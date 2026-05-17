@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import type { ProductGroup, Product, PerUnitPrice, SearchResult } from '@/lib/types'
+import { useEffect, useRef, useState } from 'react'
+import type { ProductGroup, Product, PerUnitPrice, SearchResult, SourceSite } from '@/lib/types'
 
 function formatPerUnit(ppu: PerUnitPrice | undefined): string | null {
   if (!ppu) return null
@@ -21,9 +21,86 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [groups, setGroups] = useState<ProductGroup[]>([])
   const [ungrouped, setUngrouped] = useState<Product[]>([])
+  const [rawProducts, setRawProducts] = useState<Product[]>([])
   const [totalProducts, setTotalProducts] = useState(0)
+  const [countBySource, setCountBySource] = useState<Record<SourceSite, number>>({ emag: 0, bebetei: 0, notino: 0, trendyol: 0 })
+  const [sourceErrors, setSourceErrors] = useState<Partial<Record<SourceSite, string>> | undefined>()
+  const [searchTimestamp, setSearchTimestamp] = useState<number>(0)
   const [hasSearched, setHasSearched] = useState(false)
   const [enrichmentError, setEnrichmentError] = useState<string | undefined>()
+
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportNote, setReportNote] = useState('')
+  const [reportStatus, setReportStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [reportError, setReportError] = useState<string | null>(null)
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (reportOpen) {
+      setTimeout(() => textareaRef.current?.focus(), 50)
+    }
+  }, [reportOpen])
+
+  useEffect(() => {
+    if (!reportOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeReport()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [reportOpen])
+
+  function openReport() {
+    setReportNote('')
+    setReportStatus('idle')
+    setReportError(null)
+    setReportOpen(true)
+  }
+
+  function closeReport() {
+    if (reportStatus === 'sending') return
+    setReportOpen(false)
+  }
+
+  async function submitReport() {
+    setReportStatus('sending')
+    setReportError(null)
+    try {
+      const res = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          note: reportNote,
+          userAgent: navigator.userAgent,
+          viewport: { w: window.innerWidth, h: window.innerHeight },
+          appVersion: process.env.NEXT_PUBLIC_APP_VERSION || 'dev',
+          result: {
+            query,
+            groups,
+            ungrouped,
+            rawProducts,
+            totalProducts,
+            countBySource,
+            sourceErrors,
+            enrichmentError,
+            timestamp: searchTimestamp,
+          },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        setReportStatus('error')
+        setReportError(data.error || 'Something went wrong. Try again.')
+        return
+      }
+      setReportStatus('sent')
+      setTimeout(() => setReportOpen(false), 3000)
+    } catch {
+      setReportStatus('error')
+      setReportError('Could not reach the server. Try again.')
+    }
+  }
 
   const handleSearch = async () => {
     if (!query.trim()) return
@@ -36,7 +113,11 @@ export default function Home() {
       const data: SearchResult = await response.json()
       setGroups(data.groups || [])
       setUngrouped(data.ungrouped || [])
+      setRawProducts(data.rawProducts || [])
       setTotalProducts(data.totalProducts || 0)
+      setCountBySource(data.countBySource || { emag: 0, bebetei: 0, notino: 0, trendyol: 0 })
+      setSourceErrors(data.sourceErrors)
+      setSearchTimestamp(data.timestamp || Date.now())
       setEnrichmentError(data.enrichmentError)
     } catch (error) {
       console.error('Search error:', error)
@@ -128,8 +209,17 @@ export default function Home() {
                     Found <span className="price-display text-cyan-400 text-lg sm:text-2xl">{totalProducts}</span> products
                   </span>
                 </div>
-                <div className="flex gap-4 text-sm sm:text-lg">
-                  <span className="text-slate-500">Query: <span className="text-slate-300">{query}</span></span>
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                  <span className="text-slate-500 text-sm sm:text-lg">Query: <span className="text-slate-300">{query}</span></span>
+                  <button
+                    onClick={openReport}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-200 text-rose-400 text-xs sm:text-sm font-medium"
+                  >
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
+                    Report a problem
+                  </button>
                 </div>
               </div>
             </div>
@@ -312,12 +402,71 @@ export default function Home() {
                 </svg>
               </div>
               <p className="text-lg sm:text-xl font-semibold text-slate-300 mb-2">No results found</p>
-              <p className="text-sm sm:text-base text-slate-500">Try searching for "{query}" with different keywords</p>
+              <p className="text-sm sm:text-base text-slate-500">Try searching for &quot;{query}&quot; with different keywords</p>
             </div>
           </div>
         )}
       </div>
 
+      {/* Report Modal */}
+      {reportOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) closeReport() }}
+        >
+          <div className="glass-card rounded-2xl p-6 sm:p-8 w-full max-w-lg shadow-2xl">
+            {reportStatus === 'sent' ? (
+              <div className="text-center py-6">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-lg font-semibold text-slate-100">Thanks! I&apos;ll take a look.</p>
+                <p className="text-sm text-slate-400 mt-1">Report sent successfully.</p>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-xl font-semibold text-slate-100 mb-1">Report a problem with these results</h2>
+                <p className="text-sm text-slate-400 mb-4">Tell me what&apos;s wrong (optional). The current search and results will be attached automatically.</p>
+                <textarea
+                  ref={textareaRef}
+                  value={reportNote}
+                  onChange={(e) => setReportNote(e.target.value)}
+                  maxLength={2000}
+                  rows={4}
+                  placeholder="ex: shows me Pampers when I searched Huggies"
+                  className="w-full px-4 py-3 bg-slate-900 rounded-xl border border-slate-700 focus:outline-none focus:border-cyan-500 text-white placeholder:text-slate-500 text-sm resize-none transition-all"
+                />
+                {reportError && (
+                  <p className="mt-2 text-sm text-rose-400">{reportError}</p>
+                )}
+                <div className="flex justify-end gap-3 mt-4">
+                  <button
+                    onClick={closeReport}
+                    disabled={reportStatus === 'sending'}
+                    className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all text-sm font-medium disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={submitReport}
+                    disabled={reportStatus === 'sending'}
+                    className="flex items-center gap-2 px-6 py-2.5 text-white bg-gradient-to-r from-cyan-600 to-purple-700 hover:from-cyan-500 hover:to-purple-600 disabled:from-slate-700 disabled:to-slate-600 font-semibold rounded-xl transition-all duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-cyan-500/25 text-sm"
+                  >
+                    {reportStatus === 'sending' ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Sending...
+                      </>
+                    ) : 'Send'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   )
 }
