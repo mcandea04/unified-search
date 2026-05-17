@@ -197,30 +197,32 @@ export default function Home() {
           <div className="max-w-7xl mx-auto">
             {/* Enrichment error banner */}
             {enrichmentError && (
-              <div className="mb-4 px-4 py-3 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-300 text-sm">
-                ⚠ {enrichmentError} — showing raw results without grouping.
+              <div className="mb-4 px-4 py-3 border border-accent bg-bg-elev text-text text-sm rounded-md">
+                <span className="font-mono uppercase tracking-[0.1em] text-accent text-xs mr-2">Notice</span>
+                {enrichmentError} — showing raw results without grouping.
               </div>
             )}
 
             {/* Stats Bar */}
-            <div className="glass-card rounded-lg sm:rounded-xl p-4 sm:p-6 mb-4 sm:mb-8 fade-in-up delay-2">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-400"></div>
-                  <span className="text-slate-300 font-medium text-base sm:text-xl">
-                    Found <span className="price-display text-cyan-400 text-lg sm:text-2xl">{totalProducts}</span> products
-                  </span>
+            <div className="border border-rule bg-bg-elev p-4 sm:p-5 mb-5 sm:mb-8 fade-in-up delay-2 rounded-md">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="editorial-meta">Found</span>
+                  <span className="price-display text-accent text-2xl">{totalProducts}</span>
+                  <span className="editorial-meta">products</span>
                 </div>
                 <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-                  <span className="text-slate-500 text-sm sm:text-lg">Query: <span className="text-slate-300">{query}</span></span>
+                  <span className="text-text-muted text-sm">
+                    Query: <span className="text-text font-medium">{query}</span>
+                  </span>
                   <button
                     onClick={openReport}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-200 text-rose-400 text-xs sm:text-sm font-medium"
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-rule hover:border-accent hover:text-accent transition-colors text-text-muted text-xs font-mono uppercase tracking-[0.1em] rounded-sm"
                   >
-                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                     </svg>
-                    Report a problem
+                    Report
                   </button>
                 </div>
               </div>
@@ -230,20 +232,23 @@ export default function Home() {
             {groups.map((group, idx) => (
               <div
                 key={`group-${idx}`}
-                className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-8 mb-4 sm:mb-6 fade-in-up"
-                style={{ animationDelay: `${0.3 + idx * 0.1}s` }}
+                className="border border-rule bg-bg-elev rounded-md p-5 sm:p-7 mb-5 sm:mb-6 fade-in-up"
+                style={{ animationDelay: `${0.24 + idx * 0.08}s` }}
               >
-                <div className="flex flex-col sm:flex-row items-start justify-between mb-4 sm:mb-6 gap-3">
-                  <h3 className="text-xl sm:text-2xl md:text-3xl font-semibold text-slate-100 flex-1 leading-tight">
+                <div className="flex flex-col sm:flex-row items-start justify-between mb-4 sm:mb-5 gap-3 pb-4 border-b border-rule">
+                  <h3
+                    className="font-display italic text-text flex-1 leading-tight"
+                    style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 3.5vw, 2.25rem)', fontWeight: 900 }}
+                  >
                     {group.matchedName}
                   </h3>
-                  <div className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-purple-500/10 border border-purple-500/20">
-                    <span className="text-purple-400 text-sm sm:text-lg font-medium">{group.products.length} sources</span>
-                  </div>
+                  <span className="editorial-meta whitespace-nowrap pt-1">
+                    {group.products.length} sources
+                  </span>
                 </div>
 
                 {/* Table Header */}
-                <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/20 rounded-lg mb-2 text-slate-400 text-xs sm:text-sm font-medium uppercase tracking-wider border-b border-slate-700/30">
+                <div className="hidden sm:grid grid-cols-12 gap-4 px-1 py-2 editorial-meta">
                   <div className="col-span-1">Image</div>
                   <div className="col-span-6">Product</div>
                   <div className="col-span-3">Merchant</div>
@@ -251,7 +256,7 @@ export default function Home() {
                 </div>
 
                 {/* Table Rows */}
-                <div className="space-y-1">
+                <div>
                   {group.products.map((product, pIdx) => {
                     const isBestUnit =
                       product.pricePerUnit &&
@@ -262,7 +267,7 @@ export default function Home() {
                     return (
                       <div
                         key={pIdx}
-                        className="flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 px-4 py-3 bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all duration-200 sm:items-center"
+                        className="editorial-row flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 px-1 py-3 sm:items-center hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)] transition-colors"
                       >
                         <div className="sm:col-span-1">
                           {product.imageUrl ? (
@@ -270,7 +275,7 @@ export default function Home() {
                               <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-full object-contain" />
                             </div>
                           ) : (
-                            <div className="w-12 h-12 bg-slate-800/40 rounded border border-slate-700/50"></div>
+                            <div className="w-12 h-12 bg-bg rounded border border-rule"></div>
                           )}
                         </div>
                         <div className="sm:col-span-6">
@@ -278,35 +283,35 @@ export default function Home() {
                             href={product.productUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-cyan-300 hover:text-cyan-200 visited:text-cyan-300 hover:visited:text-cyan-200 underline decoration-cyan-500/30 hover:decoration-cyan-500/60 text-sm font-medium transition-colors line-clamp-2"
+                            className="text-text hover:text-accent underline decoration-rule hover:decoration-accent text-sm font-medium transition-colors line-clamp-2"
                           >
                             {product.name || group.matchedName}
                           </a>
                           {product.attributes.organic && (
-                            <span className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded">
+                            <span className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] border border-accent text-accent rounded-sm">
                               bio
                             </span>
                           )}
                         </div>
                         <div className="flex justify-between items-start w-full sm:contents">
                           <div className="sm:col-span-3">
-                            <span className="text-slate-300 text-sm font-medium">{product.source}</span>
+                            <span className="text-text-muted text-sm font-mono uppercase tracking-[0.05em]">{product.source}</span>
                           </div>
                           <div className="sm:col-span-2 flex flex-col sm:items-end">
                             <div className="flex items-baseline gap-1">
-                              <span className="price-display text-lg font-semibold text-slate-100">{product.price}</span>
-                              <span className="text-slate-400 text-sm">RON</span>
+                              <span className="price-display text-lg text-accent">{product.price}</span>
+                              <span className="text-text-muted text-xs font-mono">RON</span>
                             </div>
-                            {ppuText && <div className="text-slate-500 text-xs mt-0.5">{ppuText}</div>}
+                            {ppuText && <div className="text-text-muted text-xs mt-0.5 font-mono">{ppuText}</div>}
                             <div className="flex gap-1 mt-1">
                               {product.price === group.bestPrice && (
-                                <span className="px-2 py-0.5 bg-gradient-to-r from-rose-500/20 to-orange-500/20 border border-rose-500/30 rounded text-rose-400 text-[10px] font-bold whitespace-nowrap">
-                                  BEST
+                                <span className="px-2 py-0.5 bg-accent text-accent-ink rounded-sm text-[10px] font-bold uppercase tracking-[0.1em] whitespace-nowrap font-mono">
+                                  Best
                                 </span>
                               )}
                               {isBestUnit && product.price !== group.bestPrice && (
-                                <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded text-amber-300 text-[10px] font-bold whitespace-nowrap">
-                                  BEST/UNIT
+                                <span className="px-2 py-0.5 border border-accent text-accent rounded-sm text-[10px] font-bold uppercase tracking-[0.1em] whitespace-nowrap font-mono">
+                                  Best/unit
                                 </span>
                               )}
                             </div>
@@ -321,15 +326,18 @@ export default function Home() {
 
             {/* Ungrouped Products */}
             {ungrouped.length > 0 && (
-              <div className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-8 fade-in-up">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <h3 className="text-lg sm:text-xl font-semibold text-slate-400">Other results</h3>
-                  <div className="px-3 py-1 rounded-full bg-slate-700/40 border border-slate-600/30">
-                    <span className="text-slate-400 text-sm">{ungrouped.length} products</span>
-                  </div>
+              <div className="border border-rule bg-bg-elev rounded-md p-5 sm:p-7 fade-in-up">
+                <div className="flex items-center justify-between mb-4 sm:mb-5 pb-4 border-b border-rule">
+                  <h3
+                    className="font-display italic text-text-muted"
+                    style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)', fontWeight: 900 }}
+                  >
+                    Other results
+                  </h3>
+                  <span className="editorial-meta">{ungrouped.length} products</span>
                 </div>
                 {/* Table Header */}
-                <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-800/20 rounded-lg mb-2 text-slate-400 text-xs sm:text-sm font-medium uppercase tracking-wider border-b border-slate-700/30">
+                <div className="hidden sm:grid grid-cols-12 gap-4 px-1 py-2 editorial-meta">
                   <div className="col-span-1">Image</div>
                   <div className="col-span-5">Product</div>
                   <div className="col-span-2">Pack</div>
@@ -338,13 +346,13 @@ export default function Home() {
                 </div>
 
                 {/* Table Rows */}
-                <div className="space-y-1">
+                <div>
                   {ungrouped.map((product, idx) => {
                     const packText = packLabel(product)
                     return (
                       <div
                         key={`ungrouped-${idx}`}
-                        className="flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 px-4 py-3 bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/30 hover:bg-slate-800/60 transition-all duration-200 sm:items-center"
+                        className="editorial-row flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-4 px-1 py-3 sm:items-center hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)] transition-colors"
                       >
                         <div className="sm:col-span-1">
                           {product.imageUrl ? (
@@ -352,7 +360,7 @@ export default function Home() {
                               <img src={product.imageUrl} alt={product.name} className="max-w-full max-h-full object-contain" />
                             </div>
                           ) : (
-                            <div className="w-12 h-12 bg-slate-800/40 rounded border border-slate-700/50"></div>
+                            <div className="w-12 h-12 bg-bg rounded border border-rule"></div>
                           )}
                         </div>
                         <div className="sm:col-span-5">
@@ -360,28 +368,28 @@ export default function Home() {
                             href={product.productUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-cyan-300 hover:text-cyan-200 visited:text-cyan-300 hover:visited:text-cyan-200 underline decoration-cyan-500/30 hover:decoration-cyan-500/60 text-sm font-medium transition-colors line-clamp-2"
+                            className="text-text hover:text-accent underline decoration-rule hover:decoration-accent text-sm font-medium transition-colors line-clamp-2"
                           >
                             {product.name}
                           </a>
                           {product.attributes.organic && (
-                            <span className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded">
+                            <span className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] border border-accent text-accent rounded-sm">
                               bio
                             </span>
                           )}
                         </div>
                         <div className="flex flex-wrap justify-between items-start gap-x-3 gap-y-1 w-full sm:contents">
-                          {packText && <div className="sm:col-span-2 text-slate-300 text-sm">{packText}</div>}
+                          {packText && <div className="sm:col-span-2 text-text text-sm">{packText}</div>}
                           <div className="sm:col-span-2">
-                            <span className="text-slate-300 text-sm font-medium">{product.source}</span>
+                            <span className="text-text-muted text-sm font-mono uppercase tracking-[0.05em]">{product.source}</span>
                           </div>
                           <div className="sm:col-span-2 flex flex-col sm:items-end">
                             <div className="flex items-baseline gap-1">
-                              <span className="price-display text-lg font-semibold text-slate-100">{product.price}</span>
-                              <span className="text-slate-400 text-sm">RON</span>
+                              <span className="price-display text-lg text-accent">{product.price}</span>
+                              <span className="text-text-muted text-xs font-mono">RON</span>
                             </div>
                             {formatPerUnit(product.pricePerUnit) && (
-                              <div className="text-slate-500 text-xs mt-0.5">{formatPerUnit(product.pricePerUnit)}</div>
+                              <div className="text-text-muted text-xs mt-0.5 font-mono">{formatPerUnit(product.pricePerUnit)}</div>
                             )}
                           </div>
                         </div>
