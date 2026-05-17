@@ -113,5 +113,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   body { transition: none; }
   .fade-in-up { animation: none; opacity: 1; }
+  .animate-spin { animation: none; }
   .animate-pulse { animation: none; }
 }
