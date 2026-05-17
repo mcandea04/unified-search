@@ -105,7 +105,7 @@ app/layout.tsx
 
 - `app/layout.tsx` — load Fraunces / DM Sans / IBM Plex Mono via `next/font/google`; inject theme-init inline script; wrap children in `ThemeProvider`.
 - `app/globals.css` — replace existing `:root` palette + body styles + `glass-card` + animated grid with new editorial CSS variables and base styles. Drop `gradient-text`, `glow-cyan`, `glow-purple`, animated `body::before`, hard-coded `input[type="text"]` overrides.
-- `app/page.tsx` — strip Tailwind classes that hardcode slate / cyan / purple values. Replace with theme-aware utilities (`bg-bg`, `text-text`, `border-rule`, `text-accent`, `text-muted`). Title becomes Fraunces; meta strip uses Plex Mono; rows get dotted dividers.
+- `app/page.tsx` — strip Tailwind classes that hardcode slate / cyan / purple / rose / emerald values. Replace with theme-aware utilities (`bg-bg`, `text-text`, `border-rule`, `text-accent`, `text-muted`). Title becomes Fraunces; meta strip uses Plex Mono; rows get dotted dividers. Restyle the "Report a problem" pill button and report modal — both currently use `glass-card`, rose tint, and a cyan→purple gradient that all conflict with the editorial direction.
 - `tailwind.config.ts` — register theme variables under `@theme` so utilities resolve to `var(--…)`.
 - New: `app/components/ThemeToggle.tsx` — segmented pill button. Client component.
 - New: `app/components/ThemeProvider.tsx` — context provider. Client component.
@@ -116,10 +116,36 @@ app/layout.tsx
 |-------------------------------------|---------------------------------------------------------------------|
 | `app/layout.tsx`                    | Add fonts, init script, provider, lang stays `ro`                   |
 | `app/globals.css`                   | Replace ~140 lines: new vars, drop animations + glassmorphism       |
-| `app/page.tsx`                      | Replace ~30 className strings; restructure header block             |
+| `app/page.tsx`                      | Restyle header, search, stats bar, group cards, ungrouped, report button + modal |
 | `app/components/ThemeProvider.tsx`  | New ~30 lines                                                        |
 | `app/components/ThemeToggle.tsx`    | New ~40 lines                                                        |
 | `tailwind.config.ts`                | Switch to `@theme` block exposing CSS-var-backed colors             |
+
+### "Report a problem" surface (added on main via PR #30)
+
+Two pieces, both restyled to editorial:
+
+**Pill button** (in the stats bar, next to the query label):
+
+- Background: `transparent`, border: 1px solid `var(--rule)`.
+- Text: `var(--text-muted)`, IBM Plex Mono, uppercase, tracking +0.1em, 0.75rem.
+- Hover: border becomes `var(--accent)`, text becomes `var(--accent)`.
+- Icon: keep the warning triangle SVG, color inherits from text.
+- No rose tint, no rounded-full pill — use `border-radius: 4px` rectangle to match overall rectilinear language.
+
+**Modal**:
+
+- Backdrop: `rgba(24, 22, 19, 0.78)` in dark / `rgba(244, 240, 230, 0.85)` in light. No `backdrop-blur` (glassmorphism is dropped sitewide).
+- Panel: `var(--bg-elev)` background, 1px solid `var(--rule)`, `border-radius: 6px`. Drop shadow stays subtle (single soft shadow, not the 2xl glow).
+- Heading: Fraunces italic 900, 1.5rem.
+- Body copy: DM Sans, `var(--text-muted)`.
+- Textarea: transparent background, 1px border `var(--rule)`, focus border `var(--accent)`, DM Sans body weight. No `bg-slate-900` override.
+- Cancel button: ghost — `var(--text-muted)`, no background, hover `var(--text)`.
+- Send button: filled `var(--accent)`, foreground `var(--accent-ink)`, IBM Plex Mono uppercase. No gradient.
+- Sent state: keep the centered checkmark, but circle uses `var(--accent)` ring (1px, transparent fill); checkmark is `var(--accent)`. Drop emerald.
+- Sending spinner: `var(--accent-ink)` track, `var(--accent-ink)` head — inherits from button.
+
+Modal preserves all existing behaviour: ESC closes, click-outside closes (unless sending), 3s auto-close on success, focus on textarea, 2000 char max.
 
 ## Behaviour details
 
@@ -185,6 +211,7 @@ Renders before React hydrates, so first paint already has the right palette. The
 7. iPhone 12 viewport (390px): toggle visible top-right, title scales, rows stack, no horizontal scroll.
 8. Tab order: search input → search button → toggle (top-right gets last in source order but visible).
 9. `prefers-reduced-motion: reduce`: theme swap has no transition.
+10. Click "Report a problem" pill in stats bar → modal opens, no glass blur, panel uses `var(--bg-elev)`. Type a note, click Send → success state shows accent-colored checkmark, auto-closes after 3s. ESC and click-outside close work the same in both modes.
 
 ### Automated
 
