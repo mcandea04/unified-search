@@ -69,6 +69,7 @@ export interface SearchResult {
   query: string
   groups: ProductGroup[]
   ungrouped: Product[]
+  rawProducts: Product[]
   totalProducts: number
   countBySource: Record<SourceSite, number>
   sourceErrors?: Partial<Record<SourceSite, string>>
