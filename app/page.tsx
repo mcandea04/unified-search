@@ -421,24 +421,40 @@ export default function Home() {
       {/* Report Modal */}
       {reportOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'color-mix(in srgb, var(--bg) 82%, transparent)' }}
           onClick={(e) => { if (e.target === e.currentTarget) closeReport() }}
         >
-          <div className="glass-card rounded-2xl p-6 sm:p-8 w-full max-w-lg shadow-2xl">
+          <div
+            className="border border-rule bg-bg-elev rounded-md p-6 sm:p-8 w-full max-w-lg"
+            style={{ boxShadow: '0 20px 50px -12px rgba(0,0,0,0.35)' }}
+          >
             {reportStatus === 'sent' ? (
               <div className="text-center py-6">
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full border border-accent flex items-center justify-center">
+                  <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-lg font-semibold text-slate-100">Thanks! I&apos;ll take a look.</p>
-                <p className="text-sm text-slate-400 mt-1">Report sent successfully.</p>
+                <p
+                  className="font-display italic text-text"
+                  style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 900 }}
+                >
+                  Thanks!
+                </p>
+                <p className="text-sm text-text-muted mt-1">Report sent. I&apos;ll take a look.</p>
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-semibold text-slate-100 mb-1">Report a problem with these results</h2>
-                <p className="text-sm text-slate-400 mb-4">Tell me what&apos;s wrong (optional). The current search and results will be attached automatically.</p>
+                <h2
+                  className="font-display italic text-text mb-2"
+                  style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 900 }}
+                >
+                  Report a problem
+                </h2>
+                <p className="text-sm text-text-muted mb-4">
+                  Tell me what&apos;s wrong (optional). The current search and results will be attached automatically.
+                </p>
                 <textarea
                   ref={textareaRef}
                   value={reportNote}
@@ -446,28 +462,28 @@ export default function Home() {
                   maxLength={2000}
                   rows={4}
                   placeholder="ex: shows me Pampers when I searched Huggies"
-                  className="w-full px-4 py-3 bg-slate-900 rounded-xl border border-slate-700 focus:outline-none focus:border-cyan-500 text-white placeholder:text-slate-500 text-sm resize-none transition-all"
+                  className="w-full px-3 py-2 bg-transparent border border-rule rounded-sm focus:outline-none focus:border-accent text-text placeholder:text-text-muted text-sm resize-none transition-colors"
                 />
                 {reportError && (
-                  <p className="mt-2 text-sm text-rose-400">{reportError}</p>
+                  <p className="mt-2 text-sm text-accent">{reportError}</p>
                 )}
                 <div className="flex justify-end gap-3 mt-4">
                   <button
                     onClick={closeReport}
                     disabled={reportStatus === 'sending'}
-                    className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all text-sm font-medium disabled:opacity-50"
+                    className="px-4 py-2 text-text-muted hover:text-text transition-colors text-xs font-mono uppercase tracking-[0.1em] disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={submitReport}
                     disabled={reportStatus === 'sending'}
-                    className="flex items-center gap-2 px-6 py-2.5 text-white bg-gradient-to-r from-cyan-600 to-purple-700 hover:from-cyan-500 hover:to-purple-600 disabled:from-slate-700 disabled:to-slate-600 font-semibold rounded-xl transition-all duration-300 disabled:cursor-not-allowed shadow-lg hover:shadow-cyan-500/25 text-sm"
+                    className="flex items-center gap-2 px-5 py-2 bg-accent text-accent-ink hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed font-mono uppercase tracking-[0.1em] text-xs transition-opacity"
                   >
                     {reportStatus === 'sending' ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Sending...
+                        <span className="w-3.5 h-3.5 border-2 border-accent-ink/30 border-t-accent-ink rounded-full animate-spin" />
+                        Sending…
                       </>
                     ) : 'Send'}
                   </button>
