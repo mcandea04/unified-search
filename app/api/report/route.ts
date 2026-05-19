@@ -29,6 +29,10 @@ function truncate(s: string, max: number): string {
   return s.length <= max ? s : s.slice(0, max - 1) + '…'
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function buildSummaryEmail(payload: ReportBody, issueUrl: string): { text: string; html: string } {
   const { note, result } = payload
   const sources = Object.entries(result.countBySource)
@@ -46,7 +50,9 @@ function buildSummaryEmail(payload: ReportBody, issueUrl: string): { text: strin
     `Issue:    ${issueUrl}`,
   ]
   const text = lines.join('\n')
-  const html = `<html><body><pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;word-break:break-word">${text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/(https?:\/\/\S+)/g, '<a href="$1">$1</a>')}</pre></body></html>`
+  const escapedUrl = escapeHtml(issueUrl)
+  const escaped = escapeHtml(text).replace(escapedUrl, `<a href="${escapedUrl}">${escapedUrl}</a>`)
+  const html = `<html><body><pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;word-break:break-word">${escaped}</pre></body></html>`
   return { text, html }
 }
 
@@ -204,12 +210,15 @@ async function createGitHubIssue(
   const repo = process.env.GITHUB_REPO || 'unified-search'
   if (!token) return { ok: false, error: 'GITHUB_TOKEN not configured' }
 
-  const body = [
-    text,
-    '',
-    '---',
-    '_Filed automatically by the in-app "Report a problem" button._',
-  ].join('\n')
+  const FOOTER = '\n\n---\n_Filed automatically by the in-app "Report a problem" button._'
+  // GitHub caps issue bodies at 65,536 chars. Reserve room for footer + a truncation notice.
+  const MAX_BODY = 65000
+  const TRUNCATION_NOTICE = '\n\n[…payload truncated to fit GitHub issue size limit; full payload is in the email inbox.]'
+  const reserved = FOOTER.length + TRUNCATION_NOTICE.length
+  const trimmedText = text.length <= MAX_BODY - reserved
+    ? text
+    : text.slice(0, MAX_BODY - reserved) + TRUNCATION_NOTICE
+  const body = trimmedText + FOOTER
 
   const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
     method: 'POST',
