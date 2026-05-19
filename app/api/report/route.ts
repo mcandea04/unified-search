@@ -29,6 +29,33 @@ function truncate(s: string, max: number): string {
   return s.length <= max ? s : s.slice(0, max - 1) + '…'
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function buildSummaryEmail(payload: ReportBody, issueUrl: string): { text: string; html: string } {
+  const { note, result } = payload
+  const sources = Object.entries(result.countBySource)
+    .map(([s, n]) => `${s}: ${n}`)
+    .join(', ')
+  const noteShort = note?.trim() ? truncate(note.trim(), 200) : '(none)'
+
+  const lines = [
+    'New bug report filed.',
+    '',
+    `Query:    ${result.query}`,
+    `Sources:  ${sources}`,
+    `Note:     ${noteShort}`,
+    '',
+    `Issue:    ${issueUrl}`,
+  ]
+  const text = lines.join('\n')
+  const escapedUrl = escapeHtml(issueUrl)
+  const escaped = escapeHtml(text).replace(escapedUrl, `<a href="${escapedUrl}">${escapedUrl}</a>`)
+  const html = `<html><body><pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;word-break:break-word">${escaped}</pre></body></html>`
+  return { text, html }
+}
+
 function buildEmailBody(payload: ReportBody): { text: string; html: string } {
   const { note, userAgent, viewport, appVersion, result } = payload
   const ts = new Date(result.timestamp)
@@ -125,18 +152,30 @@ export async function POST(request: NextRequest) {
   const resendApiKey = process.env.RESEND_API_KEY
   const emailTo = process.env.REPORT_EMAIL_TO
 
-  let text: string, html: string
+  let fullBody: { text: string; html: string }
   try {
-    ;({ text, html } = buildEmailBody(body))
+    fullBody = buildEmailBody(body)
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid report payload.' }, { status: 400 })
   }
 
+  const issueRes = await createGitHubIssue(query, fullBody.text)
+  if (!issueRes.ok) {
+    console.error('GitHub issue creation failed:', issueRes.error)
+  }
+
   if (!resendApiKey || !emailTo) {
     const fallbackTo = process.env.REPORT_FALLBACK_EMAIL_TO || 'support@example.com'
-    const mailto = `mailto:${fallbackTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`
+    const mailto = `mailto:${fallbackTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(fullBody.text)}`
     return NextResponse.json({ ok: true, fallback: 'mailto', mailto })
   }
+
+  const { text: emailText, html: emailHtml } = issueRes.ok
+    ? buildSummaryEmail(body, issueRes.url)
+    : {
+        text: `⚠ GitHub issue could not be filed — full payload below.\n\n${fullBody.text}`,
+        html: fullBody.html.replace('<pre', '<p style="color:#b45309">⚠ GitHub issue could not be filed — full payload below.</p><pre'),
+      }
 
   const emailFrom = process.env.REPORT_EMAIL_FROM || 'onboarding@resend.dev'
 
@@ -147,17 +186,59 @@ export async function POST(request: NextRequest) {
       Authorization: `Bearer ${resendApiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: emailFrom, to: [emailTo], subject, text, html }),
+    body: JSON.stringify({ from: emailFrom, to: [emailTo], subject, text: emailText, html: emailHtml }),
   })
 
   if (!resendRes.ok) {
     const detail = await resendRes.text().catch(() => '')
-    console.error(`Resend API error ${resendRes.status}:`, detail)
+    console.error('Resend API error:', detail)
     return NextResponse.json(
       { ok: false, error: 'Could not send report. Try again later.' },
       { status: 502 },
     )
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, ...(issueRes.ok ? { issueUrl: issueRes.url } : {}) })
+}
+
+async function createGitHubIssue(
+  query: string,
+  text: string,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const token = process.env.GITHUB_TOKEN
+  const owner = process.env.GITHUB_OWNER || 'mcandea04'
+  const repo = process.env.GITHUB_REPO || 'unified-search'
+  if (!token) return { ok: false, error: 'GITHUB_TOKEN not configured' }
+
+  const FOOTER = '\n\n---\n_Filed automatically by the in-app "Report a problem" button._'
+  // GitHub caps issue bodies at 65,536 chars. Reserve room for footer + a truncation notice.
+  const MAX_BODY = 65000
+  const TRUNCATION_NOTICE = '\n\n[…payload truncated to fit GitHub issue size limit; full payload is in the email inbox.]'
+  const reserved = FOOTER.length + TRUNCATION_NOTICE.length
+  const trimmedText = text.length <= MAX_BODY - reserved
+    ? text
+    : text.slice(0, MAX_BODY - reserved) + TRUNCATION_NOTICE
+  const body = trimmedText + FOOTER
+
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      title: `Search bug: "${query}"`,
+      body,
+      labels: ['bug', 'user-report'],
+    }),
+  })
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    return { ok: false, error: `GitHub API ${res.status}: ${detail}` }
+  }
+  const json = (await res.json()) as { html_url: string }
+  return { ok: true, url: json.html_url }
 }
