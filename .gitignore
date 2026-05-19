@@ -50,6 +50,9 @@ accessibility-skill-improvement-proposal.md
 # Local Claude Code settings
 .claude/
 
+# Superpowers brainstorming artifacts
+.superpowers/
+
 # Testing artifacts
 .artifacts/
 

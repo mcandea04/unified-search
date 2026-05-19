@@ -3,6 +3,7 @@ import { scrapeAllSites } from '@/lib/scrapers'
 import { enrichWithLLM } from '@/lib/matching/llm-attributes'
 import { groupProducts } from '@/lib/matching/grouping'
 import { filterAndSortByRelevance, sortGroupsByRelevance } from '@/lib/matching/relevance'
+import { SOURCE_SITES } from '@/lib/types'
 import type {
   PerUnitPrice,
   Product,
@@ -42,12 +43,7 @@ export async function GET(request: NextRequest) {
     const scraperResults = await scrapeAllSites(query)
 
     const allProducts: Product[] = []
-    const countBySource: Record<SourceSite, number> = {
-      emag: 0,
-      bebetei: 0,
-      notino: 0,
-      trendyol: 0,
-    }
+    const countBySource = Object.fromEntries(SOURCE_SITES.map((s) => [s, 0])) as Record<SourceSite, number>
     const sourceErrors: Partial<Record<SourceSite, string>> = {}
 
     for (const result of scraperResults) {

@@ -112,12 +112,6 @@ function buildEmailBody(payload: ReportBody): { text: string; html: string } {
 }
 
 export async function POST(request: NextRequest) {
-  const resendApiKey = process.env.RESEND_API_KEY
-  const emailTo = process.env.REPORT_EMAIL_TO
-  if (!resendApiKey || !emailTo) {
-    return NextResponse.json({ ok: false, error: 'Reporting is not configured.' }, { status: 500 })
-  }
-
   let body: ReportBody
   try {
     const raw = await request.json()
@@ -128,7 +122,8 @@ export async function POST(request: NextRequest) {
 
   const query = truncate(body.result.query, 80)
   const subject = `[unified-search] Bug report: "${query}"`
-  const emailFrom = process.env.REPORT_EMAIL_FROM || 'onboarding@resend.dev'
+  const resendApiKey = process.env.RESEND_API_KEY
+  const emailTo = process.env.REPORT_EMAIL_TO
 
   let text: string, html: string
   try {
@@ -136,6 +131,14 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid report payload.' }, { status: 400 })
   }
+
+  if (!resendApiKey || !emailTo) {
+    const fallbackTo = process.env.REPORT_FALLBACK_EMAIL_TO || 'support@example.com'
+    const mailto = `mailto:${fallbackTo}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`
+    return NextResponse.json({ ok: true, fallback: 'mailto', mailto })
+  }
+
+  const emailFrom = process.env.REPORT_EMAIL_FROM || 'onboarding@resend.dev'
 
   // Send via Resend HTTP API — no SDK needed, keeps dependencies unchanged.
   const resendRes = await fetch('https://api.resend.com/emails', {

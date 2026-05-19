@@ -1,7 +1,8 @@
 /**
  * Source website identifier
  */
-export type SourceSite = 'emag' | 'bebetei' | 'notino' | 'trendyol'
+export const SOURCE_SITES = ['emag', 'bebetei', 'notino', 'trendyol', 'dm'] as const
+export type SourceSite = (typeof SOURCE_SITES)[number]
 
 /**
  * Structured attributes derived from a product name.

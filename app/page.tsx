@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { SOURCE_SITES } from '@/lib/types'
 import type { ProductGroup, Product, PerUnitPrice, SearchResult, SourceSite } from '@/lib/types'
 
 function formatPerUnit(ppu: PerUnitPrice | undefined): string | null {
@@ -23,7 +24,9 @@ export default function Home() {
   const [ungrouped, setUngrouped] = useState<Product[]>([])
   const [rawProducts, setRawProducts] = useState<Product[]>([])
   const [totalProducts, setTotalProducts] = useState(0)
-  const [countBySource, setCountBySource] = useState<Record<SourceSite, number>>({ emag: 0, bebetei: 0, notino: 0, trendyol: 0 })
+  const [countBySource, setCountBySource] = useState<Record<SourceSite, number>>(
+    () => Object.fromEntries(SOURCE_SITES.map((s) => [s, 0])) as Record<SourceSite, number>
+  )
   const [sourceErrors, setSourceErrors] = useState<Partial<Record<SourceSite, string>> | undefined>()
   const [searchTimestamp, setSearchTimestamp] = useState<number>(0)
   const [hasSearched, setHasSearched] = useState(false)
@@ -115,7 +118,7 @@ export default function Home() {
       setUngrouped(data.ungrouped || [])
       setRawProducts(data.rawProducts || [])
       setTotalProducts(data.totalProducts || 0)
-      setCountBySource(data.countBySource || { emag: 0, bebetei: 0, notino: 0, trendyol: 0 })
+      setCountBySource(data.countBySource || Object.fromEntries(SOURCE_SITES.map((s) => [s, 0])) as Record<SourceSite, number>)
       setSourceErrors(data.sourceErrors)
       setSearchTimestamp(data.timestamp || Date.now())
       setEnrichmentError(data.enrichmentError)
@@ -133,7 +136,7 @@ export default function Home() {
         <div className="text-left sm:text-center mb-8 sm:mb-14 fade-in-up max-w-3xl mx-auto">
           <div className="editorial-meta mb-3 sm:mb-4 flex items-center gap-2 justify-start sm:justify-center">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" aria-hidden="true"></span>
-            <span>Vol 1 · Live price intel · eMAG / BebeTei / Notino / Trendyol</span>
+            <span>Vol 1 · Live price intel · eMAG / BebeTei / Notino / Trendyol / DM</span>
           </div>
           <h1
             className="editorial-display text-text mb-3 sm:mb-4"
@@ -142,7 +145,7 @@ export default function Home() {
             Unified Search
           </h1>
           <p className="text-text-muted text-base sm:text-lg max-w-xl mx-auto">
-            Live price intelligence across four marketplaces, ranked by per-unit value.
+            Live price intelligence across {SOURCE_SITES.length} marketplaces, ranked by per-unit value.
           </p>
         </div>
 
