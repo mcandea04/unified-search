@@ -48,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ro" className={`${fraunces.variable} ${dmSans.variable} ${plexMono.variable}`}>
+    <html lang="ro" className={`${fraunces.variable} ${dmSans.variable} ${plexMono.variable}`} suppressHydrationWarning>
       <head>
         <Script id="theme-init" strategy="beforeInteractive">{themeInit}</Script>
       </head>

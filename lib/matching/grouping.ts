@@ -18,6 +18,7 @@ function bucketKey(attrs: ProductAttributes): string {
     packSignature(attrs),
     attrs.diaperSize ?? '',
     attrs.organic ? 'bio' : 'nonbio',
+    attrs.variant ?? '',
   ].join('|')
 }
 

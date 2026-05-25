@@ -15,6 +15,8 @@ const LLMAttributeSchema = z.object({
 
 const LLMResponseSchema = z.array(LLMAttributeSchema)
 
+const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
+
 const RESPONSE_SCHEMA = {
   type: Type.ARRAY,
   items: {
@@ -64,59 +66,72 @@ export async function enrichWithLLM(
     return { products, error: 'Categorization unavailable: GOOGLE_API_KEY not configured' }
   }
 
-  try {
-    const ai = new GoogleGenAI({ apiKey })
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-lite',
-      contents: buildPrompt(query, products),
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: RESPONSE_SCHEMA,
-      },
-    })
+  const ai = new GoogleGenAI({ apiKey })
+  let lastErr: unknown
 
-    const raw = response.text
-    if (!raw) {
-      console.error('LLM enrichment: empty response text')
+  for (const model of MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: buildPrompt(query, products),
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: RESPONSE_SCHEMA,
+        },
+      })
+
+      const raw = response.text
+      if (!raw) {
+        console.error(`LLM enrichment (${model}): empty response text`)
+        return { products, error: 'Categorization temporarily unavailable' }
+      }
+
+      const parsed = LLMResponseSchema.safeParse(JSON.parse(raw))
+      if (!parsed.success) {
+        console.error(`LLM enrichment (${model}): schema validation failed`, parsed.error.message)
+        return { products, error: 'Categorization temporarily unavailable' }
+      }
+
+      const attributeMap = new Map(parsed.data.map((a) => [a.id, a]))
+
+      return {
+        products: products.map((product) => {
+          const attrs = attributeMap.get(product.id)
+          if (!attrs) return product
+
+          const pack =
+            attrs.packGrams != null
+              ? { value: attrs.packGrams, unit: 'g' as const, original: `${attrs.packGrams}g` }
+              : attrs.packMl != null
+                ? { value: attrs.packMl, unit: 'ml' as const, original: `${attrs.packMl}ml` }
+                : undefined
+
+          return {
+            ...product,
+            attributes: {
+              ...product.attributes,
+              brand: attrs.brand || undefined,
+              kind: attrs.kind || undefined,
+              organic: attrs.organic,
+              pack,
+              count: attrs.count ?? undefined,
+              variant: attrs.variant || undefined,
+            },
+          }
+        }),
+      }
+    } catch (err) {
+      const isUnavailable = err instanceof Error && err.message.includes('503')
+      if (isUnavailable) {
+        console.warn(`LLM enrichment (${model}): 503, trying next model`)
+        lastErr = err
+        continue
+      }
+      console.error(`LLM enrichment (${model}):`, err)
       return { products, error: 'Categorization temporarily unavailable' }
     }
-
-    const parsed = LLMResponseSchema.safeParse(JSON.parse(raw))
-    if (!parsed.success) {
-      console.error('LLM enrichment: schema validation failed', parsed.error.message)
-      return { products, error: 'Categorization temporarily unavailable' }
-    }
-
-    const attributeMap = new Map(parsed.data.map((a) => [a.id, a]))
-
-    return {
-      products: products.map((product) => {
-        const attrs = attributeMap.get(product.id)
-        if (!attrs) return product
-
-        const pack =
-          attrs.packGrams != null
-            ? { value: attrs.packGrams, unit: 'g' as const, original: `${attrs.packGrams}g` }
-            : attrs.packMl != null
-              ? { value: attrs.packMl, unit: 'ml' as const, original: `${attrs.packMl}ml` }
-              : undefined
-
-        return {
-          ...product,
-          attributes: {
-            ...product.attributes,
-            brand: attrs.brand || undefined,
-            kind: attrs.kind || undefined,
-            organic: attrs.organic,
-            pack,
-            count: attrs.count ?? undefined,
-            variant: attrs.variant || undefined,
-          },
-        }
-      }),
-    }
-  } catch (err) {
-    console.error('LLM enrichment error:', err)
-    return { products, error: 'Categorization temporarily unavailable' }
   }
+
+  console.error('LLM enrichment: all models unavailable', lastErr)
+  return { products, error: 'Categorization temporarily unavailable' }
 }
