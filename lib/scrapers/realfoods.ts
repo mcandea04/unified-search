@@ -83,7 +83,7 @@ export async function scrapeRealfoods(query: string): Promise<ScraperResponse> {
 function toProduct(raw: RealfoodsProduct, idx: number): Product {
   const price = typeof raw.finalPrice === 'number' ? raw.finalPrice / 100 : 0
   const slug = raw.slug ?? ''
-  const productUrl = slug ? `${BASE_URL}/products/${slug}` : ''
+  const productUrl = slug ? `${BASE_URL}/products/${slug}/` : ''
   const img = raw.primaryImage
   const variant1x = img?.imageVariants?.variants?.['1x']
   const imageUrl = img?.baseURL && variant1x ? `${img.baseURL}/${variant1x}` : ''
