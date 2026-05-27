@@ -3,7 +3,7 @@ import { getCachedProducts, setCachedProducts } from './cache'
 
 const SOURCE = 'sezamo' as const
 const BASE_URL = 'https://www.sezamo.ro'
-const CDN_URL = 'https://www.sezamo.ro'
+const CDN_URL = 'https://cdn.sezamo.ro'
 const SEARCH_API = `${BASE_URL}/services/frontend-service/search-metadata`
 const CACHE_TTL_MS = 60 * 60 * 1000
 const MAX_RESULTS = 20
