@@ -1,7 +1,7 @@
 /**
  * Source website identifier
  */
-export const SOURCE_SITES = ['emag', 'bebetei', 'notino', 'trendyol', 'dm'] as const
+export const SOURCE_SITES = ['emag', 'bebetei', 'notino', 'trendyol', 'dm', 'realfoods'] as const
 export type SourceSite = (typeof SOURCE_SITES)[number]
 
 /**

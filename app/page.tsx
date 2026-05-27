@@ -136,7 +136,7 @@ export default function Home() {
         <div className="text-left sm:text-center mb-8 sm:mb-14 fade-in-up max-w-3xl mx-auto">
           <div className="editorial-meta mb-3 sm:mb-4 flex items-center gap-2 justify-start sm:justify-center">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" aria-hidden="true"></span>
-            <span>Vol 1 · Live price intel · eMAG / BebeTei / Notino / Trendyol / DM</span>
+            <span>Vol 1 · Live price intel · eMAG / BebeTei / Notino / Trendyol / DM / Real Foods</span>
           </div>
           <h1
             className="editorial-display text-text mb-3 sm:mb-4"
