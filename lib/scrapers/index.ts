@@ -4,6 +4,7 @@ import { scrapeNotino } from './notino'
 import { scrapeTrendyol } from './trendyol'
 import { scrapeDm } from './dm'
 import { scrapeRealfoods } from './realfoods'
+import { scrapeSezamo } from './sezamo'
 import type { ScraperResponse } from '../types'
 
 /**
@@ -19,13 +20,14 @@ export async function scrapeAllSites(query: string): Promise<ScraperResponse[]> 
     scrapeTrendyol(query),
     scrapeDm(query),
     scrapeRealfoods(query),
+    scrapeSezamo(query),
   ])
 
   return results.map((result, idx) => {
     if (result.status === 'fulfilled') {
       return result.value
     } else {
-      const sources = ['emag', 'bebetei', 'notino', 'trendyol', 'dm', 'realfoods'] as const
+      const sources = ['emag', 'bebetei', 'notino', 'trendyol', 'dm', 'realfoods', 'sezamo'] as const
       console.error(`Scraper ${sources[idx]} failed:`, result.reason)
       return {
         source: sources[idx],
@@ -37,4 +39,4 @@ export async function scrapeAllSites(query: string): Promise<ScraperResponse[]> 
   })
 }
 
-export { scrapeEmag, scrapeBebetei, scrapeNotino, scrapeTrendyol, scrapeDm, scrapeRealfoods }
+export { scrapeEmag, scrapeBebetei, scrapeNotino, scrapeTrendyol, scrapeDm, scrapeRealfoods, scrapeSezamo }
