@@ -12,8 +12,9 @@ function formatPerUnit(ppu: PerUnitPrice | undefined): string | null {
 }
 
 function packLabel(product: Product): string {
-  if (product.attributes.pack) return product.attributes.pack.original
-  if (typeof product.attributes.count === 'number') return `${product.attributes.count} buc`
+  const { pack, count } = product.attributes
+  if (pack) return count && count > 1 ? `${count} x ${pack.original}` : pack.original
+  if (typeof count === 'number') return `${count} buc`
   return ''
 }
 
@@ -129,6 +130,18 @@ export default function Home() {
     }
   }
 
+  function clearSearch() {
+    setQuery('')
+    setGroups([])
+    setUngrouped([])
+    setRawProducts([])
+    setTotalProducts(0)
+    setSourceErrors(undefined)
+    setSearchTimestamp(0)
+    setHasSearched(false)
+    setEnrichmentError(undefined)
+  }
+
   return (
     <main className="min-h-screen relative">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-12 relative z-10">
@@ -152,15 +165,28 @@ export default function Home() {
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-10 sm:mb-14 fade-in-up delay-1">
           <div className="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Search…"
-              className="flex-1 bg-transparent border-0 border-b-2 border-text px-1 py-3 text-2xl sm:text-3xl font-display italic text-text placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
-              style={{ fontFamily: 'var(--font-display)' }}
-            />
+            <div className="relative flex-1 flex items-center">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Search…"
+                className="w-full bg-transparent border-0 border-b-2 border-text px-1 py-3 pr-8 text-2xl sm:text-3xl font-display italic text-text placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+                style={{ fontFamily: 'var(--font-display)' }}
+              />
+              {query.length > 0 && (
+                <button
+                  onClick={clearSearch}
+                  aria-label="Clear search"
+                  className="absolute right-1 text-text-muted hover:text-text transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
             <button
               onClick={handleSearch}
               disabled={loading || !query.trim()}

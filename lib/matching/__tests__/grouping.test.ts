@@ -264,6 +264,39 @@ describe('groupProducts', () => {
     expect(groups[0].products.map((p) => p.source)).toEqual(['bebetei', 'notino', 'emag'])
   })
 
+  it('separates single-pack from multi-pack of same unit weight', () => {
+    const products = [
+      makeProduct({
+        name: 'Finish Sare 1.5 kg',
+        source: 'emag',
+        price: 13,
+        attributes: { brand: 'Finish', kind: 'dishwasher salt', organic: false, pack: { value: 1500, unit: 'g', original: '1500g' } },
+      }),
+      makeProduct({
+        name: 'Finish Sare 1.5 kg',
+        source: 'bebetei',
+        price: 14,
+        attributes: { brand: 'Finish', kind: 'dishwasher salt', organic: false, pack: { value: 1500, unit: 'g', original: '1500g' } },
+      }),
+      makeProduct({
+        name: 'Finish Set 2x Sare 1.5 kg',
+        source: 'emag',
+        price: 23.5,
+        attributes: { brand: 'Finish', kind: 'dishwasher salt', organic: false, pack: { value: 1500, unit: 'g', original: '1500g' }, count: 2 },
+      }),
+      makeProduct({
+        name: 'Finish Set 2x Sare 1.5 kg',
+        source: 'trendyol',
+        price: 25,
+        attributes: { brand: 'Finish', kind: 'dishwasher salt', organic: false, pack: { value: 1500, unit: 'g', original: '1500g' }, count: 2 },
+      }),
+    ]
+    const { groups } = groupProducts(products)
+    expect(groups).toHaveLength(2)
+    const counts = groups.map((g) => g.products[0].attributes.count ?? 1).sort((a, b) => a - b)
+    expect(counts).toEqual([1, 2])
+  })
+
   it('separates products with different kinds into different buckets', () => {
     const products = [
       makeProduct({

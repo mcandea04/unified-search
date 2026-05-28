@@ -3,27 +3,16 @@ import { scrapeAllSites } from '@/lib/scrapers'
 import { enrichWithLLM } from '@/lib/matching/llm-attributes'
 import { groupProducts } from '@/lib/matching/grouping'
 import { filterAndSortByRelevance, sortGroupsByRelevance } from '@/lib/matching/relevance'
+import { computePerUnitPrice } from '@/lib/matching/per-unit'
 import { SOURCE_SITES } from '@/lib/types'
 import type {
-  PerUnitPrice,
   Product,
-  ProductAttributes,
   SearchResult,
   SourceSite,
 } from '@/lib/types'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
-
-function computePerUnitPrice(price: number, attrs: ProductAttributes): PerUnitPrice | undefined {
-  if (attrs.pack && attrs.pack.value > 0) {
-    return { value: price / (attrs.pack.value / 100), unit: attrs.pack.unit }
-  }
-  if (typeof attrs.count === 'number' && attrs.count > 0) {
-    return { value: price / attrs.count, unit: 'piece' }
-  }
-  return undefined
-}
 
 function applyPerUnitPrice(product: Product): Product {
   const pricePerUnit = computePerUnitPrice(product.price, product.attributes)
