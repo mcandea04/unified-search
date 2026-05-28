@@ -7,7 +7,10 @@ import type {
 } from '../types'
 
 function packSignature(attrs: ProductAttributes): string {
-  if (attrs.pack) return `${attrs.pack.value}${attrs.pack.unit}`
+  if (attrs.pack) {
+    const base = `${attrs.pack.value}${attrs.pack.unit}`
+    return attrs.count && attrs.count > 1 ? `${base}x${attrs.count}` : base
+  }
   if (typeof attrs.count === 'number') return `${attrs.count}pcs`
   return ''
 }
