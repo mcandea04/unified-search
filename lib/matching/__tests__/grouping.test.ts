@@ -297,6 +297,26 @@ describe('groupProducts', () => {
     expect(counts).toEqual([1, 2])
   })
 
+  it('propagates kind to aggregated group attributes', () => {
+    const products = [
+      makeProduct({
+        name: 'Finish Sare 1.5 kg',
+        source: 'emag',
+        price: 13,
+        attributes: { brand: 'Finish', kind: 'dishwasher salt', organic: false, pack: { value: 1500, unit: 'g', original: '1500g' } },
+      }),
+      makeProduct({
+        name: 'Somat Sare 1.5 kg',
+        source: 'bebetei',
+        price: 14,
+        attributes: { brand: 'Somat', kind: 'dishwasher salt', organic: false, pack: { value: 1500, unit: 'g', original: '1500g' } },
+      }),
+    ]
+    const { groups } = groupProducts(products)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].attributes.kind).toBe('dishwasher salt')
+  })
+
   it('separates products with different kinds into different buckets', () => {
     const products = [
       makeProduct({

@@ -4,6 +4,7 @@ import { enrichWithLLM } from '@/lib/matching/llm-attributes'
 import { groupProducts } from '@/lib/matching/grouping'
 import { filterAndSortByRelevance, sortGroupsByRelevance } from '@/lib/matching/relevance'
 import { computePerUnitPrice } from '@/lib/matching/per-unit'
+import { findStandoutDeal } from '@/lib/matching/standout'
 import { SOURCE_SITES } from '@/lib/types'
 import type {
   Product,
@@ -64,15 +65,21 @@ export async function GET(request: NextRequest) {
 
     const sortedGroups = sortGroupsByRelevance(groups, query)
 
+    const standoutDeal = enrichmentError ? undefined : findStandoutDeal(sortedGroups, ungrouped)
+    const filteredUngrouped = standoutDeal
+      ? ungrouped.filter(p => p.id !== standoutDeal.product.id)
+      : ungrouped
+
     const response: SearchResult = {
       query,
       groups: sortedGroups,
-      ungrouped,
+      ungrouped: filteredUngrouped,
       rawProducts: allProducts,
       totalProducts: relevantProducts.length,
       countBySource,
       ...(Object.keys(sourceErrors).length > 0 ? { sourceErrors } : {}),
       ...(enrichmentError ? { enrichmentError } : {}),
+      ...(standoutDeal ? { standoutDeal } : {}),
       timestamp: Date.now(),
     }
 

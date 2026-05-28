@@ -41,6 +41,7 @@ function confidenceFor(sources: Set<SourceSite>, attrs: ProductAttributes): Matc
 function aggregateAttributes(products: Product[]): ProductAttributes {
   const head = products[0].attributes
   const out: ProductAttributes = { organic: head.organic }
+  if (head.kind) out.kind = head.kind
   if (head.brand) out.brand = head.brand
   if (head.pack) out.pack = head.pack
   if (typeof head.count === 'number') out.count = head.count

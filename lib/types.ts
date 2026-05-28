@@ -64,6 +64,15 @@ export interface ProductGroup {
 }
 
 /**
+ * A single-source product that beats the best same-kind group by ≥ 20% per-unit
+ */
+export interface StandoutDeal {
+  product: Product
+  beatenGroupBestPpu: PerUnitPrice
+  savingsPercent: number
+}
+
+/**
  * Search result from API
  */
 export interface SearchResult {
@@ -75,6 +84,7 @@ export interface SearchResult {
   countBySource: Record<SourceSite, number>
   sourceErrors?: Partial<Record<SourceSite, string>>
   enrichmentError?: string
+  standoutDeal?: StandoutDeal
   timestamp: number
 }
 
