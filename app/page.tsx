@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { SOURCE_SITES } from '@/lib/types'
-import type { ProductGroup, Product, PerUnitPrice, SearchResult, SourceSite } from '@/lib/types'
+import type { ProductGroup, Product, PerUnitPrice, SearchResult, SourceSite, StandoutDeal } from '@/lib/types'
 
 function formatPerUnit(ppu: PerUnitPrice | undefined): string | null {
   if (!ppu) return null
@@ -32,6 +32,7 @@ export default function Home() {
   const [searchTimestamp, setSearchTimestamp] = useState<number>(0)
   const [hasSearched, setHasSearched] = useState(false)
   const [enrichmentError, setEnrichmentError] = useState<string | undefined>()
+  const [standoutDeal, setStandoutDeal] = useState<StandoutDeal | undefined>()
 
   const [reportOpen, setReportOpen] = useState(false)
   const [reportNote, setReportNote] = useState('')
@@ -123,6 +124,7 @@ export default function Home() {
       setSourceErrors(data.sourceErrors)
       setSearchTimestamp(data.timestamp || Date.now())
       setEnrichmentError(data.enrichmentError)
+      setStandoutDeal(data.standoutDeal)
     } catch (error) {
       console.error('Search error:', error)
     } finally {
@@ -140,6 +142,7 @@ export default function Home() {
     setSearchTimestamp(0)
     setHasSearched(false)
     setEnrichmentError(undefined)
+    setStandoutDeal(undefined)
   }
 
   return (
@@ -222,7 +225,7 @@ export default function Home() {
         )}
 
         {/* Results */}
-        {!loading && hasSearched && (groups.length > 0 || ungrouped.length > 0) && (
+        {!loading && hasSearched && (groups.length > 0 || ungrouped.length > 0 || standoutDeal) && (
           <div className="max-w-7xl mx-auto">
             {/* Enrichment error banner */}
             {enrichmentError && (
@@ -256,6 +259,46 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {/* Best Value Hero */}
+            {standoutDeal && (
+              <div className="border-2 border-accent bg-bg-elev rounded-md p-5 sm:p-7 mb-5 sm:mb-8 fade-in-up delay-2">
+                <div className="flex items-center gap-2 mb-4">
+                  <svg className="w-4 h-4 text-accent flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  <span className="font-mono uppercase tracking-[0.1em] text-accent text-xs font-bold">Best value</span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                  {standoutDeal.product.imageUrl && (
+                    <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center overflow-hidden rounded bg-white">
+                      <img src={standoutDeal.product.imageUrl} alt={standoutDeal.product.name} className="max-w-full max-h-full object-contain" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <a
+                      href={standoutDeal.product.productUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-display italic text-text hover:text-accent underline decoration-rule hover:decoration-accent transition-colors leading-tight block mb-1"
+                      style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)', fontWeight: 900 }}
+                    >
+                      {standoutDeal.product.name}
+                    </a>
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="text-text-muted text-sm font-mono uppercase tracking-[0.05em]">{standoutDeal.product.source}</span>
+                      <span className="price-display text-lg text-accent">{standoutDeal.product.price} <span className="text-text-muted text-xs font-mono">RON</span></span>
+                      {standoutDeal.product.pricePerUnit && (
+                        <span className="text-text-muted text-xs font-mono">{formatPerUnit(standoutDeal.product.pricePerUnit)}</span>
+                      )}
+                    </div>
+                    <p className="text-text-muted text-xs mt-1">
+                      {Math.round(standoutDeal.savingsPercent * 100)}% cheaper per unit than the next best group ({formatPerUnit(standoutDeal.beatenGroupBestPpu)})
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Grouped Products */}
             {groups.map((group, idx) => (
