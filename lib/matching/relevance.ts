@@ -16,6 +16,42 @@ function splitWords(normalizedText: string): string[] {
   return normalizedText.split(' ').filter(w => w.length > 2)
 }
 
+function levenshteinDistance(a: string, b: string): number {
+  const previous = Array.from({ length: b.length + 1 }, (_, i) => i)
+  const current = Array.from({ length: b.length + 1 }, () => 0)
+
+  for (let i = 1; i <= a.length; i++) {
+    current[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      current[j] = Math.min(
+        current[j - 1] + 1,
+        previous[j] + 1,
+        previous[j - 1] + cost,
+      )
+    }
+    previous.splice(0, previous.length, ...current)
+  }
+
+  return previous[b.length]
+}
+
+function wordSimilarity(a: string, b: string): number {
+  if (a === b) return 1
+  if (a.length < 6 || b.length < 6 || a[0] !== b[0]) return 0
+
+  const maxLength = Math.max(a.length, b.length)
+  return 1 - levenshteinDistance(a, b) / maxLength
+}
+
+function bestWordSimilarity(queryWord: string, haystackWords: Iterable<string>): number {
+  let best = 0
+  for (const haystackWord of haystackWords) {
+    best = Math.max(best, wordSimilarity(queryWord, haystackWord))
+  }
+  return best >= 0.78 ? best : 0
+}
+
 function urlSlug(url: string): string {
   const segments = (() => {
     try {
@@ -48,7 +84,8 @@ export function calculateRelevance(product: Product, query: string): number {
   const normalizedHaystack = normalizeText(buildSearchableText(product))
 
   const queryWords = [...new Set(splitWords(normalizedQuery))]
-  const haystackWords = new Set(splitWords(normalizedHaystack))
+  const haystackWordList = splitWords(normalizedHaystack)
+  const haystackWords = new Set(haystackWordList)
 
   let score = 0
 
@@ -63,22 +100,29 @@ export function calculateRelevance(product: Product, query: string): number {
 
   // 2. Query words matched across full haystack (30 points)
   if (queryWords.length > 0) {
-    const matchedWords = queryWords.filter(w => haystackWords.has(w)).length
-    score += (matchedWords / queryWords.length) * 30
+    const matchedWordScore = queryWords.reduce((sum, word) => {
+      if (haystackWords.has(word)) return sum + 1
+      return sum + bestWordSimilarity(word, haystackWords)
+    }, 0)
+    score += (matchedWordScore / queryWords.length) * 30
   }
 
   // 3. Word order similarity in haystack (15 points)
   if (queryWords.length > 0) {
     let lastIndex = -1
-    let orderMatches = 0
+    let orderMatchScore = 0
     for (const word of queryWords) {
-      const index = normalizedHaystack.indexOf(word, lastIndex + 1)
+      const index = haystackWordList.findIndex((haystackWord, i) => {
+        if (i <= lastIndex) return false
+        return haystackWord === word || bestWordSimilarity(word, [haystackWord]) > 0
+      })
       if (index > lastIndex) {
-        orderMatches++
+        const haystackWord = haystackWordList[index]
+        orderMatchScore += haystackWord === word ? 1 : bestWordSimilarity(word, [haystackWord])
         lastIndex = index
       }
     }
-    score += (orderMatches / queryWords.length) * 15
+    score += (orderMatchScore / queryWords.length) * 15
   }
 
   // 4. Fuzzy text similarity on name (15 points)

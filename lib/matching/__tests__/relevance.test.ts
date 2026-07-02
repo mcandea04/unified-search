@@ -56,6 +56,23 @@ describe('calculateRelevance', () => {
     })
   })
 
+  describe('close spelling matches', () => {
+    it('keeps English monohydrate products for Romanian query "monohidrat"', () => {
+      const product = makeProduct({
+        name: 'Creatine Monohydrate, 300 g, BioTech USA',
+        source: 'bebetei',
+        productUrl: 'https://comenzi.bebetei.ro/suplimente-alimentare-si-produse-naturiste/suplimente-pentru-sportivi/creatina/creatine-monohydrate-300-g-biotech-usa-p389322',
+        attributes: {
+          organic: false,
+          brand: 'BioTech USA',
+          kind: 'creatine',
+          pack: { value: 300, unit: 'g', original: '300g' },
+        },
+      })
+      expect(calculateRelevance(product, 'monohidrat')).toBeGreaterThanOrEqual(30)
+    })
+  })
+
   describe('no regression for unrelated products', () => {
     it('unrelated product scores below 30', () => {
       const product = makeProduct({
@@ -70,6 +87,44 @@ describe('calculateRelevance', () => {
 })
 
 describe('filterAndSortByRelevance', () => {
+  it('keeps all raw products from issue 51 for query "monohidrat"', () => {
+    const products: Product[] = [
+      makeProduct({
+        id: 'bebetei-r0',
+        name: 'Jeleuri cu monohidrat de creatina si aroma de zmeura,...',
+        source: 'bebetei',
+        productUrl: 'https://comenzi.bebetei.ro/suplimente-alimentare-si-produse-naturiste/suplimente-pentru-sportivi/creatina/jeleuri-cu-monohidrat-de-creatina-si-aroma-de-zmeura-3000-mg-400-g-applied-nutrition-p423468',
+      }),
+      makeProduct({
+        id: 'bebetei-r1',
+        name: 'Creatina Monohidrata cu aroma de cirese, 500 g, OstroVit',
+        source: 'bebetei',
+        productUrl: 'https://comenzi.bebetei.ro/suplimente-alimentare-si-produse-naturiste/suplimente-pentru-sportivi/creatina/creatina-monohidrata-cu-aroma-de-cirese-500-g-ostrovit-p411902',
+      }),
+      makeProduct({
+        id: 'bebetei-r2',
+        name: 'Creatine Monohydrate, 300 g, BioTech USA',
+        source: 'bebetei',
+        productUrl: 'https://comenzi.bebetei.ro/suplimente-alimentare-si-produse-naturiste/suplimente-pentru-sportivi/creatina/creatine-monohydrate-300-g-biotech-usa-p389322',
+      }),
+      makeProduct({
+        id: 'dm-3086680',
+        name: 'Thunder Creatina monohidrata, 300 g',
+        source: 'dm',
+        brand: 'Pro Line nutrition',
+        productUrl: 'https://www.dm.ro/p/d/3086680/pro-line-nutrition-thunder-creatina-monohidrata',
+      }),
+    ]
+
+    const result = filterAndSortByRelevance(products, 'monohidrat', 30)
+    expect(result.map(p => p.id)).toEqual([
+      'bebetei-r0',
+      'bebetei-r1',
+      'dm-3086680',
+      'bebetei-r2',
+    ])
+  })
+
   it('keeps all 6 Riemann P20 products from the bug report', () => {
     const products: Product[] = [
       makeProduct({
